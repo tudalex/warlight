@@ -69,6 +69,16 @@ public class BotStarter implements Bot
 		return false;
 	}
 
+	private void updateThreat(Region region) {
+		final String playerName = region.getPlayerName();
+		region.threat = 0;
+		for (Region neigh : region.getNeighbors()) {
+			if (!neigh.getPlayerName().equals(playerName)) {
+				region.threat += neigh.getArmies();
+			}
+		}
+	}
+
 	@Override
 	/**
 	 * This method is called for at first part of each round. This example puts two armies on random regions
@@ -77,25 +87,43 @@ public class BotStarter implements Bot
 	 */
 	public ArrayList<PlaceArmiesMove> getPlaceArmiesMoves(BotState state, Long timeOut) 
 	{
-		
+		ArrayList<Region> myRegions = new ArrayList<Region>();
+		for (Region region : state.getVisibleMap().getRegions()) {
+			updateThreat(region);
+			if (region.getPlayerName().equals(state.getMyPlayerName())) {
+				myRegions.add(region);
+			}
+		}
+
+		//System.out.println("MyREgions :" + myRegions.size());
+
+		myRegions.sort(new Comparator<Region>() {
+			@Override
+			public int compare(Region o1, Region o2) {
+				return o2.threat - o1.threat;
+			}
+		});
+
 		ArrayList<PlaceArmiesMove> placeArmiesMoves = new ArrayList<PlaceArmiesMove>();
 		String myName = state.getMyPlayerName();
 		int armies = 2;
 		int armiesLeft = state.getStartingArmies();
 		LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
-		
-		while(armiesLeft > 0)
-		{
-			double rand = Math.random();
-			int r = (int) (rand*visibleRegions.size());
-			Region region = visibleRegions.get(r);
-			
-			if(region.ownedByPlayer(myName) && borderRegion(region, myName))
-			{
-				placeArmiesMoves.add(new PlaceArmiesMove(myName, region, armies));
-				armiesLeft -= armies;
-			}
-		}
+
+		placeArmiesMoves.add(new PlaceArmiesMove(myName, myRegions.get(0), armiesLeft));
+//		while(armiesLeft > 0)
+//		{
+//			double rand = Math.random();
+//			int r = (int) (rand*visibleRegions.size());
+//			Region region = visibleRegions.get(r);
+//
+//			if(region.ownedByPlayer(myName) && borderRegion(region, myName))
+//			{
+//				placeArmiesMoves.add(new PlaceArmiesMove(myName, region, armiesLeft));
+//				armiesLeft -= armies;
+//				break;
+//			}
+//		}
 		
 		return placeArmiesMoves;
 	}
@@ -113,8 +141,8 @@ public class BotStarter implements Bot
 		int armies = 5;
 		int maxTransfers = 10;
 		int transfers = 0;
-		
-		for(Region fromRegion : state.getVisibleMap().getRegions())
+		double ATTACK_FACTOR = 2;
+		for(final Region fromRegion : state.getVisibleMap().getRegions())
 		{
 			if(fromRegion.ownedByPlayer(myName)) //do an attack
 			{
@@ -125,14 +153,24 @@ public class BotStarter implements Bot
 				possibleToRegions.sort(new Comparator<Region>() {
 					@Override
 					public int compare(Region o1, Region o2) {
+						if (o1.getArmies() == o2.getArmies()) {
+							// Preferam regiunile care sunt in aceeasi superregiune
+							return ((o1.getSuperRegion().getId() == fromRegion.getId()) ? 0 : 1) -
+									((o2.getSuperRegion().getId() == fromRegion.getId()) ? 0 : 1);
+						}
 						return o1.getArmies() - o2.getArmies();
 					}
 				});
 
 				for (Region toRegion : possibleToRegions) {
-					if (!toRegion.getPlayerName().equals(myName) && armiesAvailable > toRegion.getArmies() * 1.4) //do an attack
+					final int potentialArmies;
+					if (!toRegion.getPlayerName().equals(myName) && !toRegion.getPlayerName().equals("neutral"))
+						potentialArmies  = toRegion.getArmies() +  5;
+					else
+						potentialArmies = toRegion.getArmies();
+					if (!toRegion.getPlayerName().equals(myName) && armiesAvailable >= potentialArmies * ATTACK_FACTOR) //do an attack
 					{
-						int armiesUsed = (int) Math.ceil(toRegion.getArmies() * 1.4);
+						int armiesUsed = (int) Math.ceil(potentialArmies * ATTACK_FACTOR);
 						armiesAvailable -= armiesUsed;
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
 					}
@@ -142,8 +180,9 @@ public class BotStarter implements Bot
 					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1
 								&& transfers < maxTransfers && borderRegion(toRegion, myName)) //do a transfer
 					{
-						armiesAvailable = 0;
+
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
+						armiesAvailable = 0;
 						transfers++;
 						break;
 					}
