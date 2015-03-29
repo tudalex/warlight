@@ -38,12 +38,26 @@ public class BotStarter implements Bot
 	 */
 	public Region getStartingRegion(BotState state, Long timeOut)
 	{
-		double rand = Math.random();
-		int r = (int) (rand*state.getPickableStartingRegions().size());
-		int regionId = state.getPickableStartingRegions().get(r).getId();
-		Region startingRegion = state.getFullMap().getRegion(regionId);
-		
-		return startingRegion;
+		Region bestRegion = null;
+		double bestRatio = -1;
+		for (Region pickableRegion : state.getPickableStartingRegions()) {
+			SuperRegion superRegion  = pickableRegion.getSuperRegion();
+			int sum = 0;
+			for (Region region : superRegion.getSubRegions())
+				if (region.getId() != pickableRegion.getId())
+				{
+					// Din cate am inteles ce teritorii nu au 6 armies la start vor deveni wastelands cu 2
+					// asa am dedus din gamelog
+					sum += (region.getArmies() > 0) ? region.getArmies() : 2;
+				}
+			final double ratio = (double) sum / superRegion.getArmiesReward();
+			if (ratio > bestRatio) {
+				bestRatio = ratio;
+				bestRegion = pickableRegion;
+			}
+		}
+
+		return bestRegion;
 	}
 
 	@Override
