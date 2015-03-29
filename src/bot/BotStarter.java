@@ -21,6 +21,7 @@ package bot;
  */
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedList;
 
 import map.Region;
@@ -60,6 +61,14 @@ public class BotStarter implements Bot
 		return bestRegion;
 	}
 
+	private boolean borderRegion(Region region, String myName) {
+		for (Region neigh : region.getNeighbors()) {
+			if (!neigh.getPlayerName().equals(myName))
+				return true;
+		}
+		return false;
+	}
+
 	@Override
 	/**
 	 * This method is called for at first part of each round. This example puts two armies on random regions
@@ -81,7 +90,7 @@ public class BotStarter implements Bot
 			int r = (int) (rand*visibleRegions.size());
 			Region region = visibleRegions.get(r);
 			
-			if(region.ownedByPlayer(myName))
+			if(region.ownedByPlayer(myName) && borderRegion(region, myName))
 			{
 				placeArmiesMoves.add(new PlaceArmiesMove(myName, region, armies));
 				armiesLeft -= armies;
@@ -111,31 +120,37 @@ public class BotStarter implements Bot
 			{
 				ArrayList<Region> possibleToRegions = new ArrayList<Region>();
 				possibleToRegions.addAll(fromRegion.getNeighbors());
-				
-				while(!possibleToRegions.isEmpty())
-				{
-					double rand = Math.random();
-					int r = (int) (rand*possibleToRegions.size());
-					Region toRegion = possibleToRegions.get(r);
-					
-					if(!toRegion.getPlayerName().equals(myName) && fromRegion.getArmies() > 6) //do an attack
-					{
-						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armies));
-						break;
+				int armiesAvailable = fromRegion.getArmies() - 1;
+
+				possibleToRegions.sort(new Comparator<Region>() {
+					@Override
+					public int compare(Region o1, Region o2) {
+						return o1.getArmies() - o2.getArmies();
 					}
-					else if(toRegion.getPlayerName().equals(myName) && fromRegion.getArmies() > 1
-								&& transfers < maxTransfers) //do a transfer
+				});
+
+				for (Region toRegion : possibleToRegions) {
+					if (!toRegion.getPlayerName().equals(myName) && armiesAvailable > toRegion.getArmies() * 1.4) //do an attack
 					{
-						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armies));
+						int armiesUsed = (int) Math.ceil(toRegion.getArmies() * 1.4);
+						armiesAvailable -= armiesUsed;
+						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
+					}
+
+				}
+				for (Region toRegion : possibleToRegions) {
+					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1
+								&& transfers < maxTransfers && borderRegion(toRegion, myName)) //do a transfer
+					{
+						armiesAvailable = 0;
+						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
 						transfers++;
 						break;
 					}
-					else
-						possibleToRegions.remove(toRegion);
 				}
 			}
 		}
-		
+
 		return attackTransferMoves;
 	}
 
