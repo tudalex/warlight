@@ -170,7 +170,14 @@ public class Border {
 
             border.add(currentRegion);
         }
+
+        System.err.println("Border " + Arrays.toString(border.toArray()));
         return new Border(border, state);
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(regions.toArray());
     }
 
 }

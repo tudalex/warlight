@@ -79,6 +79,7 @@ public class BotStarter implements Bot
 
 		System.err.println("Round " + state.getRoundNumber());
 
+		myRegions.clear();
 		for (Region region : visibleRegions) {
 			region.update();
 			if (region.getPlayerName().equals(state.getMyPlayerName())) {
@@ -87,7 +88,7 @@ public class BotStarter implements Bot
 		}
 		System.err.println("Updated regions");
 
-		myRegions.sort((o1, o2) -> o1.threat - o2.threat);
+		myRegions.sort((o1, o2) -> o2.threat - o1.threat);
 
 		System.err.println("Sorted regions");
 
@@ -100,9 +101,10 @@ public class BotStarter implements Bot
 
 		System.err.println("Placed deploy order");
 		HashSet<Region> visited = new HashSet<>();
+		borders.clear();
 
 		for (Region region : myRegions) {
-			if (region.border) {
+			if (region.border && !visited.contains(region)) {
 				final Border t = Border.getBorder(region, visited, state);
 				borders.add(t);
 			}
@@ -129,10 +131,14 @@ public class BotStarter implements Bot
 
 		if (borders.size() > 0 && borders.get(0).getSize() < 5) {
 			System.err.println("Got a border for minmax");
-			final long startTime = System.currentTimeMillis();
+			System.err.println(borders.get(0).toString());
+			final long startTime = System.nanoTime();
+
+
+
 			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
-			final long endTime = System.currentTimeMillis();
-			System.err.println(endTime - startTime);
+			final long endTime = System.nanoTime();
+			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
 			System.err.println(Arrays.toString(r.moves.toArray()));
 			attackTransferMoves.addAll(r.moves);
 

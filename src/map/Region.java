@@ -52,6 +52,8 @@ public class Region {
 
     public void update() {
         final String playerName = this.getPlayerName();
+        if (playerName.equals("neutral"))
+            return;
         this.threat = 0;
         this.border = false;
         for (Region neigh : this.getNeighbors()) {
@@ -177,6 +179,11 @@ public class Region {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return ""+this.id;
     }
 
     
