@@ -20,6 +20,7 @@ public class Region {
     private int moveableArmies;
     private String playerName;
     public int threat;
+    public boolean border;
 
     public Region(int id, SuperRegion superRegion) {
         this.id = id;
@@ -29,6 +30,7 @@ public class Region {
         this.armies = 0;
         this.moveableArmies = 0;
         this.threat = 0;
+        this.border = false;
 
         superRegion.addSubRegion(this);
     }
@@ -45,6 +47,19 @@ public class Region {
     public Region(Region other) {
         this(other.id, other.superRegion, other.playerName, other.armies);
         this.moveableArmies = other.moveableArmies;
+    }
+
+
+    public void update() {
+        final String playerName = this.getPlayerName();
+        this.threat = 0;
+        this.border = false;
+        for (Region neigh : this.getNeighbors()) {
+            if (!neigh.getPlayerName().equals(playerName)) {
+                this.threat += neigh.getArmies();
+                this.border = true;
+            }
+        }
     }
 
     public void addNeighbor(Region neighbor) {

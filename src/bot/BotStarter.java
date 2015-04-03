@@ -61,24 +61,6 @@ public class BotStarter implements Bot
 		return bestRegion;
 	}
 
-	private boolean borderRegion(Region region, String myName) {
-		for (Region neigh : region.getNeighbors()) {
-			if (!neigh.getPlayerName().equals(myName))
-				return true;
-		}
-		return false;
-	}
-
-	private void updateThreat(Region region) {
-		final String playerName = region.getPlayerName();
-		region.threat = 0;
-		for (Region neigh : region.getNeighbors()) {
-			if (!neigh.getPlayerName().equals(playerName)) {
-				region.threat += neigh.getArmies();
-			}
-		}
-	}
-
 	@Override
 	/**
 	 * This method is called for at first part of each round. This example puts two armies on random regions
@@ -89,7 +71,7 @@ public class BotStarter implements Bot
 	{
 		ArrayList<Region> myRegions = new ArrayList<Region>();
 		for (Region region : state.getVisibleMap().getRegions()) {
-			updateThreat(region);
+			region.update();
 			if (region.getPlayerName().equals(state.getMyPlayerName())) {
 				myRegions.add(region);
 			}
@@ -139,7 +121,7 @@ public class BotStarter implements Bot
 		ArrayList<AttackTransferMove> attackTransferMoves = new ArrayList<AttackTransferMove>();
 		String myName = state.getMyPlayerName();
 		int armies = 5;
-		int maxTransfers = 10;
+		//int maxTransfers = 10;
 		int transfers = 0;
 		double ATTACK_FACTOR = 2;
 		for(final Region fromRegion : state.getVisibleMap().getRegions())
@@ -178,12 +160,10 @@ public class BotStarter implements Bot
 				}
 				for (Region toRegion : possibleToRegions) {
 					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1
-								&& transfers < maxTransfers && borderRegion(toRegion, myName)) //do a transfer
+								&& toRegion.border) //do a transfer
 					{
-
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
 						armiesAvailable = 0;
-						transfers++;
 						break;
 					}
 				}
