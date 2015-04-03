@@ -57,9 +57,11 @@ public class Region {
         for (Region neigh : this.getNeighbors()) {
             if (!neigh.getPlayerName().equals(playerName)) {
                 this.threat += neigh.getArmies();
-                this.border = true;
+                if (!neigh.getPlayerName().equals("neutral"))
+                    this.border = true;
             }
         }
+        this.moveableArmies = this.armies - 1;
     }
 
     public void addNeighbor(Region neighbor) {

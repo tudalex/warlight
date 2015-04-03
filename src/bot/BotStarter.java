@@ -20,10 +20,9 @@ package bot;
  * a new instance of your bot, and then the parser is started.
  */
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.*;
 
+import map.Border;
 import map.Region;
 import map.SuperRegion;
 import move.AttackTransferMove;
@@ -31,6 +30,11 @@ import move.PlaceArmiesMove;
 
 public class BotStarter implements Bot 
 {
+	ArrayList<Border> borders = new ArrayList<>();
+	ArrayList<Region> myRegions = new ArrayList<>();
+
+	BorderMinimax minimax;
+
 	@Override
 	/**
 	 * A method that returns which region the bot would like to start on, the pickable regions are stored in the BotState.
@@ -39,6 +43,8 @@ public class BotStarter implements Bot
 	 */
 	public Region getStartingRegion(BotState state, Long timeOut)
 	{
+		minimax = new BorderMinimax(state);
+
 		Region bestRegion = null;
 		double bestRatio = -1;
 		for (Region pickableRegion : state.getPickableStartingRegions()) {
@@ -69,44 +75,43 @@ public class BotStarter implements Bot
 	 */
 	public ArrayList<PlaceArmiesMove> getPlaceArmiesMoves(BotState state, Long timeOut) 
 	{
-		ArrayList<Region> myRegions = new ArrayList<Region>();
-		for (Region region : state.getVisibleMap().getRegions()) {
+		final LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
+
+		System.err.println("Round " + state.getRoundNumber());
+
+		for (Region region : visibleRegions) {
 			region.update();
 			if (region.getPlayerName().equals(state.getMyPlayerName())) {
 				myRegions.add(region);
 			}
 		}
+		System.err.println("Updated regions");
 
-		//System.out.println("MyREgions :" + myRegions.size());
+		myRegions.sort((o1, o2) -> o1.threat - o2.threat);
 
-		myRegions.sort(new Comparator<Region>() {
-			@Override
-			public int compare(Region o1, Region o2) {
-				return o2.threat - o1.threat;
-			}
-		});
+		System.err.println("Sorted regions");
 
 		ArrayList<PlaceArmiesMove> placeArmiesMoves = new ArrayList<PlaceArmiesMove>();
 		String myName = state.getMyPlayerName();
-		int armies = 2;
 		int armiesLeft = state.getStartingArmies();
-		LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
 
+		//TODO: Change this!
 		placeArmiesMoves.add(new PlaceArmiesMove(myName, myRegions.get(0), armiesLeft));
-//		while(armiesLeft > 0)
-//		{
-//			double rand = Math.random();
-//			int r = (int) (rand*visibleRegions.size());
-//			Region region = visibleRegions.get(r);
-//
-//			if(region.ownedByPlayer(myName) && borderRegion(region, myName))
-//			{
-//				placeArmiesMoves.add(new PlaceArmiesMove(myName, region, armiesLeft));
-//				armiesLeft -= armies;
-//				break;
-//			}
-//		}
-		
+
+		System.err.println("Placed deploy order");
+		HashSet<Region> visited = new HashSet<>();
+
+		for (Region region : myRegions) {
+			if (region.border) {
+				final Border t = Border.getBorder(region, visited, state);
+				borders.add(t);
+			}
+		}
+
+		System.err.println("Calculated borders");
+		// Sortam dupa dimensiune
+		borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
+		System.err.println("Finished placing armies.");
 		return placeArmiesMoves;
 	}
 
@@ -120,17 +125,28 @@ public class BotStarter implements Bot
 	{
 		ArrayList<AttackTransferMove> attackTransferMoves = new ArrayList<AttackTransferMove>();
 		String myName = state.getMyPlayerName();
-		int armies = 5;
-		//int maxTransfers = 10;
-		int transfers = 0;
-		double ATTACK_FACTOR = 2;
+		double ATTACK_FACTOR = 1.8;
+
+		if (borders.size() > 0 && borders.get(0).getSize() < 5) {
+			System.err.println("Got a border for minmax");
+			final long startTime = System.currentTimeMillis();
+			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
+			final long endTime = System.currentTimeMillis();
+			System.err.println(endTime - startTime);
+			System.err.println(Arrays.toString(r.moves.toArray()));
+			attackTransferMoves.addAll(r.moves);
+
+		}
+
+		System.err.println("Positioning armies");
+
 		for(final Region fromRegion : state.getVisibleMap().getRegions())
 		{
 			if(fromRegion.ownedByPlayer(myName)) //do an attack
 			{
 				ArrayList<Region> possibleToRegions = new ArrayList<Region>();
 				possibleToRegions.addAll(fromRegion.getNeighbors());
-				int armiesAvailable = fromRegion.getArmies() - 1;
+				int armiesAvailable = fromRegion.getMoveableArmies();
 
 				possibleToRegions.sort(new Comparator<Region>() {
 					@Override
@@ -156,11 +172,9 @@ public class BotStarter implements Bot
 						armiesAvailable -= armiesUsed;
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
 					}
-
 				}
 				for (Region toRegion : possibleToRegions) {
-					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1
-								&& toRegion.border) //do a transfer
+					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1 && toRegion.border) //do a transfer
 					{
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
 						armiesAvailable = 0;
@@ -169,6 +183,7 @@ public class BotStarter implements Bot
 				}
 			}
 		}
+		System.err.println("Finished");
 
 		return attackTransferMoves;
 	}

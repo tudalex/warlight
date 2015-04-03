@@ -6,12 +6,11 @@
 package map;
 
 import bot.BotState;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import move.AttackTransferMove;
+import sun.awt.image.ImageWatched;
 
 /**
  *
@@ -151,6 +150,27 @@ public class Border {
 
     public List<Region> getRegions() {
         return regions;
+    }
+
+    public int getSize() {
+        return regions.size();
+    }
+
+    static public Border getBorder(Region startingRegion, HashSet<Region> visited, BotState state) {
+        LinkedList<Region> queue = new LinkedList<>();
+        LinkedList<Region> border = new LinkedList<>();
+        queue.add(startingRegion);
+        while (!queue.isEmpty()) {
+            final Region currentRegion = queue.poll();
+            for (Region neigh : currentRegion.getNeighbors())
+                if (neigh.border && !visited.contains(neigh)) {
+                    queue.add(neigh);
+                    visited.add(neigh);
+                }
+
+            border.add(currentRegion);
+        }
+        return new Border(border, state);
     }
 
 }
