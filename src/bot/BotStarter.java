@@ -196,6 +196,10 @@ public class BotStarter implements Bot
 
 	public static void main(String[] args)
 	{
+		if (args.length > 0) {
+			BorderMinimax.benchmark();
+			return;
+		}
 		BotParser parser = new BotParser(new BotStarter());
 		parser.run();
 	}

@@ -116,54 +116,62 @@ public class BorderMinimax {
         }
         
     }
-    /**
-     * Nu porneste bot-ul fara sa commentez main-ul de mai jos.
-     */
-//        BotState state = new BotState();
-//        String[] params = {"settings", "your_bot", "A"};
-//        state.updateSettings("your_bot", params);
-//        params[2] = "B";
-//        state.updateSettings("opponent_bot", params);
-//        SuperRegion sr = new SuperRegion(1, 1);
-//        Region r1 = new Region(1, sr);
-//        Region r2 = new Region(2, sr);
-//        Region r3 = new Region(3, sr);
-//        Region r4 = new Region(4, sr);
-//        r1.addNeighbor(r2);
-//        r1.addNeighbor(r3);
-//        r1.addNeighbor(r4);
-//        r2.addNeighbor(r1);
-//        r2.addNeighbor(r3);
-//        r2.addNeighbor(r4);
-//        r3.addNeighbor(r2);
-//        r3.addNeighbor(r1);
-//        r3.addNeighbor(r4);
-//        r4.addNeighbor(r1);
-//        r4.addNeighbor(r3);
-//        r4.addNeighbor(r2);
-//
-//        r1.setArmies(20);
-//        r2.setArmies(2);
-//        r3.setArmies(5);
-//        r4.setArmies(5);
-//        r1.setPlayerName("A");
-//        r2.setPlayerName("A");
-//        r3.setPlayerName("B");
-//        r4.setPlayerName("B");
-//
-//        List<Region> regions = new ArrayList<>(4);
-//        regions.add(r1);
-//        regions.add(r2);
-//        regions.add(r3);
-//        regions.add(r4);
-//        regions.stream().forEach((r) -> {
-//            r.setMoveableArmies(r.getArmies() - 1);
-//        });
-//        Border border = new Border(regions, state);
-//
-//        BorderMinimax minimax = new BorderMinimax(state);
-//        Result result = minimax.minimax(border, "A", 10);
-//        System.out.println(result);
-//        System.out.println(minimax.iterations);
-//    }
+
+    static void benchmark() {
+        BotState state = new BotState();
+        String[] params = {"settings", "your_bot", "A"};
+        state.updateSettings("your_bot", params);
+        params[2] = "B";
+        state.updateSettings("opponent_bot", params);
+        SuperRegion sr = new SuperRegion(1, 1);
+        Region r1 = new Region(1, sr);
+        Region r2 = new Region(2, sr);
+        Region r3 = new Region(3, sr);
+        Region r4 = new Region(4, sr);
+        r1.addNeighbor(r2);
+        r1.addNeighbor(r3);
+        r1.addNeighbor(r4);
+        r2.addNeighbor(r1);
+        r2.addNeighbor(r3);
+        r2.addNeighbor(r4);
+        r3.addNeighbor(r2);
+        r3.addNeighbor(r1);
+        r3.addNeighbor(r4);
+        r4.addNeighbor(r1);
+        r4.addNeighbor(r3);
+        r4.addNeighbor(r2);
+
+        r1.setArmies(20);
+        r2.setArmies(2);
+        r3.setArmies(5);
+        r4.setArmies(5);
+        r1.setPlayerName("A");
+        r2.setPlayerName("A");
+        r3.setPlayerName("B");
+        r4.setPlayerName("B");
+
+        List<Region> regions = new ArrayList<>(4);
+        regions.add(r1);
+        regions.add(r2);
+        regions.add(r3);
+        regions.add(r4);
+        regions.stream().forEach((r) -> {
+            r.setMoveableArmies(r.getArmies() - 1);
+        });
+        Border border = new Border(regions, state);
+
+        BorderMinimax minimax = new BorderMinimax(state);
+        final long iterations = 100;
+        long avg = 0;
+        Result result = null;
+        for (int i = 0; i < iterations; ++ i) {
+            final long startTime = System.nanoTime();
+            result = minimax.minimax(border, "A", 10);
+            final long elapsed = (System.nanoTime() - startTime) / 1000000;
+            avg += elapsed;
+        }
+        System.out.println(result);
+        System.out.println(minimax.iterations);
+        System.out.println((avg / iterations) +"ms");
+    }
 }
