@@ -110,6 +110,32 @@ public class BotStarter implements Bot
 			}
 		}
 
+
+		visited.clear();
+
+		LinkedList<Region> bfsQueue = new LinkedList<>();
+
+		for (Region region: myRegions) {
+			if (region.border) {
+				bfsQueue.add(region);
+				visited.add(region);
+			}
+		}
+
+		while (!bfsQueue.isEmpty()) {
+			final Region currentRegion = bfsQueue.poll();
+			for (Region neigh : currentRegion.getNeighbors())
+				if (!visited.contains(neigh) && neigh.getPlayerName().equals(myName)) {
+					visited.add(neigh);
+					neigh.distanceToBorder = currentRegion.distanceToBorder + 1;
+					bfsQueue.add(neigh);
+				}
+		}
+
+		for (Region region : myRegions) {
+			System.err.println(region.getId() + " " + region.distanceToBorder);
+		}
+
 		System.err.println("Calculated borders");
 		// Sortam dupa dimensiune
 		borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
@@ -129,7 +155,7 @@ public class BotStarter implements Bot
 		String myName = state.getMyPlayerName();
 		double ATTACK_FACTOR = 1.8;
 
-		if (borders.size() > 0 && borders.get(0).getSize() < 5) {
+		if (borders.size() > 0 && borders.get(0).getSize() < 7) {
 			System.err.println("Got a border for minmax");
 			System.err.println(borders.get(0).toString());
 			final long startTime = System.nanoTime();
@@ -180,7 +206,8 @@ public class BotStarter implements Bot
 					}
 				}
 				for (Region toRegion : possibleToRegions) {
-					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1 && toRegion.border) //do a transfer
+					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1
+							&& toRegion.distanceToBorder < fromRegion.distanceToBorder) //do a transfer
 					{
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
 						armiesAvailable = 0;

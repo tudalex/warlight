@@ -21,6 +21,7 @@ public class Region {
     private String playerName;
     public int threat;
     public boolean border;
+    public int distanceToBorder;
 
     public Region(int id, SuperRegion superRegion) {
         this.id = id;
@@ -64,6 +65,8 @@ public class Region {
             }
         }
         this.moveableArmies = this.armies - 1;
+        if (this.border)
+            this.distanceToBorder = 0;
     }
 
     public void addNeighbor(Region neighbor) {
