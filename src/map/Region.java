@@ -22,6 +22,7 @@ public class Region {
     public int threat;
     public boolean border;
     public int distanceToBorder;
+    public boolean touched; // Un mod de a marca nodurile ca sa stim cand nu ar trebui sa operam asupra lor
 
     public Region(int id, SuperRegion superRegion) {
         this.id = id;
@@ -55,18 +56,21 @@ public class Region {
         final String playerName = this.getPlayerName();
         if (playerName.equals("neutral"))
             return;
-        this.threat = 0;
+        this.threat = -this.getArmies() + 1;
         this.border = false;
         for (Region neigh : this.getNeighbors()) {
             if (!neigh.getPlayerName().equals(playerName)) {
                 this.threat += neigh.getArmies();
                 if (!neigh.getPlayerName().equals("neutral"))
                     this.border = true;
+                else
+                    this.threat += neigh.getArmies() * 3;
             }
         }
         this.moveableArmies = this.armies - 1;
         if (this.border)
             this.distanceToBorder = 0;
+        touched = false;
     }
 
     public void addNeighbor(Region neighbor) {

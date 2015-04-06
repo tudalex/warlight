@@ -140,6 +140,11 @@ public class BotStarter implements Bot
 		// Sortam dupa dimensiune
 		borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 		System.err.println("Finished placing armies.");
+		for (PlaceArmiesMove move : placeArmiesMoves) {
+			final Region region = move.getRegion();
+			region.setArmies(region.getArmies() + move.getArmies());
+			region.setMoveableArmies(region.getArmies() - 1);
+		}
 		return placeArmiesMoves;
 	}
 
@@ -155,7 +160,10 @@ public class BotStarter implements Bot
 		String myName = state.getMyPlayerName();
 		double ATTACK_FACTOR = 1.8;
 
-		if (borders.size() > 0 && borders.get(0).getSize() < 7) {
+
+		// Minimax
+		//TODO: check that we have 1s in the timebank
+		if (borders.size() > 0 && borders.get(0).getSize() < 7 && state.getRoundNumber() < 10) {
 			System.err.println("Got a border for minmax");
 			System.err.println(borders.get(0).toString());
 			final long startTime = System.nanoTime();
@@ -166,20 +174,31 @@ public class BotStarter implements Bot
 			final long endTime = System.nanoTime();
 			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
 			System.err.println(Arrays.toString(r.moves.toArray()));
-			attackTransferMoves.addAll(r.moves);
 
+			for (AttackTransferMove m : r.moves) {
+				if (m.getFromRegion().getPlayerName().equals(myName)) {
+					attackTransferMoves.add(m);
+
+					// We don't want the heuristics to touch it
+					state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
+				}
+			}
 		}
 
-		System.err.println("Positioning armies");
 
+
+		//Heuristics
+		System.err.println("Positioning armies");
 		for(final Region fromRegion : state.getVisibleMap().getRegions())
 		{
-			if(fromRegion.ownedByPlayer(myName)) //do an attack
+			if(fromRegion.ownedByPlayer(myName) && !fromRegion.touched) //do an attack
 			{
 				ArrayList<Region> possibleToRegions = new ArrayList<Region>();
 				possibleToRegions.addAll(fromRegion.getNeighbors());
 				int armiesAvailable = fromRegion.getMoveableArmies();
 
+
+				// Sorting them based on the less ammount of armies
 				possibleToRegions.sort(new Comparator<Region>() {
 					@Override
 					public int compare(Region o1, Region o2) {
@@ -192,6 +211,8 @@ public class BotStarter implements Bot
 					}
 				});
 
+
+				// Attacking all the regions that we can
 				for (Region toRegion : possibleToRegions) {
 					final int potentialArmies;
 					if (!toRegion.getPlayerName().equals(myName) && !toRegion.getPlayerName().equals("neutral"))
@@ -205,15 +226,18 @@ public class BotStarter implements Bot
 						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
 					}
 				}
-				for (Region toRegion : possibleToRegions) {
-					if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 1
-							&& toRegion.distanceToBorder < fromRegion.distanceToBorder) //do a transfer
-					{
-						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
-						armiesAvailable = 0;
-						break;
+
+				// Transfering troops to the ones that are close to the border where the real fighting happens
+				if (fromRegion.threat  < 5)
+					for (Region toRegion : possibleToRegions) {
+						if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 0
+								&& toRegion.distanceToBorder < fromRegion.distanceToBorder) //do a transfer
+						{
+							attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
+							armiesAvailable = 0;
+							break;
+						}
 					}
-				}
 			}
 		}
 		System.err.println("Finished");
