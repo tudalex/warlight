@@ -21,6 +21,8 @@ package bot;
  */
 
 import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import map.Border;
 import map.Region;
@@ -34,6 +36,8 @@ public class BotStarter implements Bot
 	ArrayList<Region> myRegions = new ArrayList<>();
 
 	BorderMinimax minimax;
+
+	ArrayList<AttackTransferMove> attackList = new ArrayList<>();
 
 	@Override
 	/**
@@ -96,8 +100,7 @@ public class BotStarter implements Bot
 		String myName = state.getMyPlayerName();
 		int armiesLeft = state.getStartingArmies();
 
-		//TODO: Change this!
-		placeArmiesMoves.add(new PlaceArmiesMove(myName, myRegions.get(0), armiesLeft));
+
 
 		System.err.println("Placed deploy order");
 		HashSet<Region> visited = new HashSet<>();
@@ -145,6 +148,44 @@ public class BotStarter implements Bot
 			region.setArmies(region.getArmies() + move.getArmies());
 			region.setMoveableArmies(region.getArmies() - 1);
 		}
+
+		attackList.clear();
+		// Heuristics for army attack
+
+		List<Region> targets = state.getVisibleMap().getRegions().stream()
+				.filter(region1 -> !region1.getPlayerName().equals(myName))
+				.map(region2 -> {
+					region2.importance = region2.getSuperRegion().getArmiesReward() / region2.getArmies();
+					return region2;
+				})
+				.sorted((Region o1, Region o2) -> o2.importance - o1.importance)
+				.collect(Collectors.toList());
+
+		for (Region toRegion : targets) {
+			Region fromRegion = toRegion.getNeighbors().stream()
+					.filter(region1 -> region1.getPlayerName().equals(myName))
+					.sorted((o1, o2) -> o2.getArmies() - o1.getArmies())
+					.findFirst().get();
+
+			final int necessaryArmies;
+
+			if (!toRegion.getPlayerName().equals("neutral"))
+				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
+			else
+				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
+			if (fromRegion.getMoveableArmies() < necessaryArmies && armiesLeft > 0) {
+				final int count = Math.min(necessaryArmies - fromRegion.getMoveableArmies(), armiesLeft);
+				armiesLeft -= count;
+				fromRegion.deployArmies(count);
+				placeArmiesMoves.add(new PlaceArmiesMove(myName, fromRegion, count));
+			}
+			if (fromRegion.getMoveableArmies() >= necessaryArmies) {
+				attackList.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
+				fromRegion.spendArmies(necessaryArmies);
+			}
+		}
+
+
 		return placeArmiesMoves;
 	}
 
@@ -156,34 +197,37 @@ public class BotStarter implements Bot
 	 */
 	public ArrayList<AttackTransferMove> getAttackTransferMoves(BotState state, Long timeOut) 
 	{
-		ArrayList<AttackTransferMove> attackTransferMoves = new ArrayList<AttackTransferMove>();
+
 		String myName = state.getMyPlayerName();
 		double ATTACK_FACTOR = 1.8;
+//
+//
+//		// Minimax
+//		//TODO: check that we have 1s in the timebank
+//		if (borders.size() > 0 && borders.get(0).getSize() < 7 && state.getRoundNumber() < 10) {
+//			System.err.println("Got a border for minmax");
+//			System.err.println(borders.get(0).toString());
+//			final long startTime = System.nanoTime();
+//
+//
+//
+//			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
+//			final long endTime = System.nanoTime();
+//			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
+//			System.err.println(Arrays.toString(r.moves.toArray()));
+//
+//			for (AttackTransferMove m : r.moves) {
+//				if (m.getFromRegion().getPlayerName().equals(myName)) {
+//					attackTransferMoves.add(m);
+//
+//					// We don't want the heuristics to touch it
+//					state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
+//				}
+//			}
+//		}
 
 
-		// Minimax
-		//TODO: check that we have 1s in the timebank
-		if (borders.size() > 0 && borders.get(0).getSize() < 7 && state.getRoundNumber() < 10) {
-			System.err.println("Got a border for minmax");
-			System.err.println(borders.get(0).toString());
-			final long startTime = System.nanoTime();
 
-
-
-			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
-			final long endTime = System.nanoTime();
-			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
-			System.err.println(Arrays.toString(r.moves.toArray()));
-
-			for (AttackTransferMove m : r.moves) {
-				if (m.getFromRegion().getPlayerName().equals(myName)) {
-					attackTransferMoves.add(m);
-
-					// We don't want the heuristics to touch it
-					state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
-				}
-			}
-		}
 
 
 
@@ -213,19 +257,19 @@ public class BotStarter implements Bot
 
 
 				// Attacking all the regions that we can
-				for (Region toRegion : possibleToRegions) {
-					final int potentialArmies;
-					if (!toRegion.getPlayerName().equals(myName) && !toRegion.getPlayerName().equals("neutral"))
-						potentialArmies  = toRegion.getArmies() +  5;
-					else
-						potentialArmies = toRegion.getArmies();
-					if (!toRegion.getPlayerName().equals(myName) && armiesAvailable >= potentialArmies * ATTACK_FACTOR) //do an attack
-					{
-						int armiesUsed = (int) Math.ceil(potentialArmies * ATTACK_FACTOR);
-						armiesAvailable -= armiesUsed;
-						attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
-					}
-				}
+//				for (Region toRegion : possibleToRegions) {
+//					final int potentialArmies;
+//					if (!toRegion.getPlayerName().equals(myName) && !toRegion.getPlayerName().equals("neutral"))
+//						potentialArmies  = toRegion.getArmies() +  5;
+//					else
+//						potentialArmies = toRegion.getArmies();
+//					if (!toRegion.getPlayerName().equals(myName) && armiesAvailable >= potentialArmies * ATTACK_FACTOR) //do an attack
+//					{
+//						int armiesUsed = (int) Math.ceil(potentialArmies * ATTACK_FACTOR);
+//						armiesAvailable -= armiesUsed;
+//						attackList.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
+//					}
+//				}
 
 				// Transfering troops to the ones that are close to the border where the real fighting happens
 				if (fromRegion.threat  < 5)
@@ -233,7 +277,7 @@ public class BotStarter implements Bot
 						if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 0
 								&& toRegion.distanceToBorder < fromRegion.distanceToBorder) //do a transfer
 						{
-							attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
+							attackList.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
 							armiesAvailable = 0;
 							break;
 						}
@@ -242,7 +286,7 @@ public class BotStarter implements Bot
 		}
 		System.err.println("Finished");
 
-		return attackTransferMoves;
+		return attackList;
 	}
 
 	public static void main(String[] args)

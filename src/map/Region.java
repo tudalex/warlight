@@ -23,6 +23,7 @@ public class Region {
     public boolean border;
     public int distanceToBorder;
     public boolean touched; // Un mod de a marca nodurile ca sa stim cand nu ar trebui sa operam asupra lor
+    public int importance;
 
     public Region(int id, SuperRegion superRegion) {
         this.id = id;
@@ -51,6 +52,16 @@ public class Region {
         this.moveableArmies = other.moveableArmies;
     }
 
+    public void deployArmies(int count) {
+        armies += count;
+        moveableArmies += count;
+    }
+    public void spendArmies(int count) {
+        moveableArmies -= count;
+        if (moveableArmies < 0) {
+            System.err.println("Shit happened used more armies than available");
+        }
+    }
 
     public void update() {
         final String playerName = this.getPlayerName();
