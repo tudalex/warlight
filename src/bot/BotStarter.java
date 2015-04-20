@@ -152,6 +152,35 @@ public class BotStarter implements Bot
 		attackList.clear();
 		// Heuristics for army attack
 
+
+
+
+
+		if (borders.size() > 0 && borders.get(0).getSize() < 5 && state.getRoundNumber() < 10) {
+			System.err.println("Got a border for minmax");
+			System.err.println(borders.get(0).toString());
+			final long startTime = System.nanoTime();
+
+
+
+			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
+			final long endTime = System.nanoTime();
+			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
+			System.err.println(Arrays.toString(r.moves.toArray()));
+
+			for (AttackTransferMove m : r.moves) {
+				if (m.getFromRegion().getPlayerName().equals(myName)) {
+					attackList.add(m);
+					state.getVisibleMap().getRegion(m.getFromRegion().getId()).spendArmies(m.getArmies());
+
+					// We don't want the heuristics to touch it
+					state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
+				}
+			}
+		}
+
+
+
 		List<Region> targets = state.getVisibleMap().getRegions().stream()
 				.filter(region1 -> !region1.getPlayerName().equals(myName))
 				.map(region2 -> {
@@ -162,11 +191,15 @@ public class BotStarter implements Bot
 				.collect(Collectors.toList());
 
 		for (Region toRegion : targets) {
+			if (toRegion.touched)
+				continue;
 			Region fromRegion = toRegion.getNeighbors().stream()
 					.filter(region1 -> region1.getPlayerName().equals(myName))
+					.filter(region -> !region.touched)
 					.sorted((o1, o2) -> o2.getArmies() - o1.getArmies())
-					.findFirst().get();
-
+					.findFirst().orElse(null);
+			if (fromRegion == null)
+				continue;
 			final int necessaryArmies;
 
 			if (!toRegion.getPlayerName().equals("neutral"))
@@ -184,6 +217,8 @@ public class BotStarter implements Bot
 				fromRegion.spendArmies(necessaryArmies);
 			}
 		}
+
+
 
 
 		return placeArmiesMoves;
@@ -204,27 +239,7 @@ public class BotStarter implements Bot
 //
 //		// Minimax
 //		//TODO: check that we have 1s in the timebank
-//		if (borders.size() > 0 && borders.get(0).getSize() < 7 && state.getRoundNumber() < 10) {
-//			System.err.println("Got a border for minmax");
-//			System.err.println(borders.get(0).toString());
-//			final long startTime = System.nanoTime();
 //
-//
-//
-//			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
-//			final long endTime = System.nanoTime();
-//			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
-//			System.err.println(Arrays.toString(r.moves.toArray()));
-//
-//			for (AttackTransferMove m : r.moves) {
-//				if (m.getFromRegion().getPlayerName().equals(myName)) {
-//					attackTransferMoves.add(m);
-//
-//					// We don't want the heuristics to touch it
-//					state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
-//				}
-//			}
-//		}
 
 
 

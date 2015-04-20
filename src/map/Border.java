@@ -10,7 +10,6 @@ import bot.BotState;
 import java.util.*;
 
 import move.AttackTransferMove;
-import sun.awt.image.ImageWatched;
 
 /**
  *
