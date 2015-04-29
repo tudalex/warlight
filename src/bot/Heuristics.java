@@ -28,14 +28,15 @@ public class Heuristics {
         final Orders orders = new Orders();
         final HashMap<Region, Integer> importance = new HashMap<>();
         final HashMap<SuperRegion, Integer> superRegionEnemies = new HashMap<>();
-        final TreeSet<SuperRegion> superRegions = new TreeSet<>();
+        final HashSet<SuperRegion> superRegions = new HashSet<>();
 
         // Precalculating SuperRegion information
         regions.stream().forEach(region -> {
             superRegions.add(region.getSuperRegion());
             region.update();
         });
-        superRegions.stream().forEach(superRegion -> enemyArmiesInSuperRegion(superRegion, myName));
+        superRegions.stream().forEach(superRegion ->
+				superRegionEnemies.put(superRegion, enemyArmiesInSuperRegion(superRegion, myName)));
 
 		List<Region> targets = regions.stream()
 				.filter(region1 -> !region1.getPlayerName().equals(myName))
