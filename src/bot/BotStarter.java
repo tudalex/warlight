@@ -21,8 +21,6 @@ package bot;
  */
 
 import java.util.*;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import map.Border;
 import map.Region;
@@ -71,14 +69,7 @@ public class BotStarter implements Bot
 		return bestRegion;
 	}
 
-    static public int enemyArmiesInRegion(SuperRegion superRegion, String playerName) {
-        return superRegion.getSubRegions().stream()
-                .filter(region -> !region.getPlayerName().equals(playerName))
-                .mapToInt(Region::getArmies)
-                .sum();
-    }
-
-	@Override
+    @Override
 	/**
 	 * This method is called for at first part of each round. This example puts two armies on random regions
 	 * until he has no more armies left to place.
@@ -151,88 +142,18 @@ public class BotStarter implements Bot
         // Heuristics for army attack
 
 
-        // Old minimax. I should really take it out
-        if (borders.size() > 0 && borders.get(0).getSize() < 5 && state.getRoundNumber() > 10 && false) {
-            System.err.println("Got a border for minmax");
-            System.err.println(borders.get(0).toString());
-            final long startTime = System.nanoTime();
 
 
-            final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
-            final long endTime = System.nanoTime();
-            System.err.println("Minimax took:" + (double) (endTime - startTime) / 1000000 + "ms");
-            System.err.println(Arrays.toString(r.moves.toArray()));
-
-            for (AttackTransferMove m : r.moves) {
-                if (m.getFromRegion().getPlayerName().equals(myName)) {
-                    attackList.add(m);
-                    state.getVisibleMap().getRegion(m.getFromRegion().getId()).spendArmies(m.getArmies());
-
-                    // We don't want the heuristics to touch it
-                    state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
-                }
-            }
+        Orders greedyOrders = Heuristics.greedyHeuristic(state, armiesLeft, visibleRegions);
+        if (armiesLeft > 0 && borders.size() > 0) {
+            greedyOrders.placeArmiesMoves.add(
+                    new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
         }
-
-        Orders greedyOrders = greedyHeuristic(state, armiesLeft, visibleRegions);
         attackList.addAll(greedyOrders.attackTransferMoves);
         return greedyOrders.placeArmiesMoves;
     }
 
-    Orders greedyHeuristic(BotState state, int armiesLeft, List<Region> regions) {
-        final String myName = state.getMyPlayerName();
-
-        final Orders orders = new Orders();
-
-		List<Region> targets = regions.stream()
-				.filter(region1 -> !region1.getPlayerName().equals(myName))
-				.map(region2 -> {
-					region2.importance =
-                            region2.getSuperRegion().getArmiesReward() / enemyArmiesInRegion(region2.getSuperRegion(), myName);
-					return region2;
-				})
-				.sorted((Region o1, Region o2) -> o2.importance - o1.importance)
-				.collect(Collectors.toList());
-
-		for (Region toRegion : targets) {
-			if (toRegion.touched)
-				continue;
-			Region fromRegion = toRegion.getNeighbors().stream()
-					.filter(region1 -> region1.getPlayerName().equals(myName))
-					.filter(region -> !region.touched)
-					.sorted((o1, o2) -> o2.getArmies() - o1.getArmies())
-					.findFirst().orElse(null);
-			if (fromRegion == null)
-				continue;
-			final int necessaryArmies;
-
-			if (!toRegion.getPlayerName().equals("neutral") && state.getRoundNumber() > 80)
-				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
-			else
-				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
-			if (fromRegion.getMoveableArmies() < necessaryArmies && armiesLeft > 0) {
-				final int count = Math.min(necessaryArmies - fromRegion.getMoveableArmies(), armiesLeft);
-				armiesLeft -= count;
-				fromRegion.deployArmies(count);
-				orders.placeArmiesMoves.add(new PlaceArmiesMove(myName, fromRegion, count));
-			}
-			if (fromRegion.getMoveableArmies() >= necessaryArmies) {
-				orders.attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
-				fromRegion.spendArmies(necessaryArmies);
-			}
-		}
-
-        //TODO: Sometimes this code is not hit.
-        //      see http://pub.theaigames.com/competitions/warlight-ai-challenge-2/games/554089ab3a21cd6c3fc28a5f
-        if (armiesLeft > 0 && borders.size() > 0) {
-            orders.placeArmiesMoves.add(new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
-        }
-
-
-    	return orders;
-	}
-
-	@Override
+    @Override
 	/**
 	 * This method is called for at the second part of each round. This example attacks if a region has
 	 * more than 6 armies on it, and transfers if it has less than 6 and a neighboring owned region.
@@ -241,21 +162,9 @@ public class BotStarter implements Bot
 	public ArrayList<AttackTransferMove> getAttackTransferMoves(BotState state, Long timeOut) 
 	{
 
-		String myName = state.getMyPlayerName();
-		double ATTACK_FACTOR = 1.8;
-//
-//
-//		// Minimax
-//		//TODO: check that we have 1s in the timebank
-//
+		final String myName = state.getMyPlayerName();
 
-
-
-
-
-
-		//Heuristics
-		System.err.println("Positioning armies");
+		System.err.println("Moving armies to border");
 		for(final Region fromRegion : state.getVisibleMap().getRegions())
 		{
 			if(fromRegion.ownedByPlayer(myName) && !fromRegion.touched) //do an attack
@@ -277,22 +186,6 @@ public class BotStarter implements Bot
 						return o1.getArmies() - o2.getArmies();
 					}
 				});
-
-
-				// Attacking all the regions that we can
-//				for (Region toRegion : possibleToRegions) {
-//					final int potentialArmies;
-//					if (!toRegion.getPlayerName().equals(myName) && !toRegion.getPlayerName().equals("neutral"))
-//						potentialArmies  = toRegion.getArmies() +  5;
-//					else
-//						potentialArmies = toRegion.getArmies();
-//					if (!toRegion.getPlayerName().equals(myName) && armiesAvailable >= potentialArmies * ATTACK_FACTOR) //do an attack
-//					{
-//						int armiesUsed = (int) Math.ceil(potentialArmies * ATTACK_FACTOR);
-//						armiesAvailable -= armiesUsed;
-//						attackList.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesUsed));
-//					}
-//				}
 
 				// Transfering troops to the ones that are close to the border where the real fighting happens
 				if (fromRegion.threat  < 5)
