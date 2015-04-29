@@ -71,120 +71,124 @@ public class BotStarter implements Bot
 		return bestRegion;
 	}
 
+    static public int enemyArmiesInRegion(SuperRegion superRegion, String playerName) {
+        return superRegion.getSubRegions().stream()
+                .filter(region -> !region.getPlayerName().equals(playerName))
+                .mapToInt(Region::getArmies)
+                .sum();
+    }
+
 	@Override
 	/**
 	 * This method is called for at first part of each round. This example puts two armies on random regions
 	 * until he has no more armies left to place.
 	 * @return The list of PlaceArmiesMoves for one round
 	 */
-	public ArrayList<PlaceArmiesMove> getPlaceArmiesMoves(BotState state, Long timeOut) 
-	{
-		final LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
+	public ArrayList<PlaceArmiesMove> getPlaceArmiesMoves(BotState state, Long timeOut) {
+        final LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
 
-		System.err.println("Round " + state.getRoundNumber());
+        System.err.println("Round " + state.getRoundNumber());
 
-		myRegions.clear();
-		for (Region region : visibleRegions) {
-			region.update();
-			if (region.getPlayerName().equals(state.getMyPlayerName())) {
-				myRegions.add(region);
-			}
-		}
-		System.err.println("Updated regions");
+        myRegions.clear();
+        for (Region region : visibleRegions) {
+            region.update();
+            if (region.getPlayerName().equals(state.getMyPlayerName())) {
+                myRegions.add(region);
+            }
+        }
+        System.err.println("Updated regions");
 
-		myRegions.sort((o1, o2) -> o2.threat - o1.threat);
+        myRegions.sort((o1, o2) -> o2.threat - o1.threat);
 
-		System.err.println("Sorted regions");
+        System.err.println("Sorted regions");
 
-		ArrayList<PlaceArmiesMove> placeArmiesMoves = new ArrayList<PlaceArmiesMove>();
-		String myName = state.getMyPlayerName();
-		int armiesLeft = state.getStartingArmies();
+        String myName = state.getMyPlayerName();
+        int armiesLeft = state.getStartingArmies();
 
 
+        System.err.println("Placed deploy order");
+        HashSet<Region> visited = new HashSet<>();
+        borders.clear();
 
-		System.err.println("Placed deploy order");
-		HashSet<Region> visited = new HashSet<>();
-		borders.clear();
-
-		for (Region region : myRegions) {
-			if (region.border && !visited.contains(region)) {
-				final Border t = Border.getBorder(region, visited, state);
-				borders.add(t);
-			}
-		}
-
-
-		visited.clear();
-
-		LinkedList<Region> bfsQueue = new LinkedList<>();
-
-		for (Region region: myRegions) {
-			if (region.border) {
-				bfsQueue.add(region);
-				visited.add(region);
-			}
-		}
-
-		while (!bfsQueue.isEmpty()) {
-			final Region currentRegion = bfsQueue.poll();
-			for (Region neigh : currentRegion.getNeighbors())
-				if (!visited.contains(neigh) && neigh.getPlayerName().equals(myName)) {
-					visited.add(neigh);
-					neigh.distanceToBorder = currentRegion.distanceToBorder + 1;
-					bfsQueue.add(neigh);
-				}
-		}
-
-		for (Region region : myRegions) {
-			System.err.println(region.getId() + " " + region.distanceToBorder);
-		}
-
-		System.err.println("Calculated borders");
-		// Sortam dupa dimensiune
-		borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
-		System.err.println("Finished placing armies.");
-		for (PlaceArmiesMove move : placeArmiesMoves) {
-			final Region region = move.getRegion();
-			region.setArmies(region.getArmies() + move.getArmies());
-			region.setMoveableArmies(region.getArmies() - 1);
-		}
-
-		attackList.clear();
-		// Heuristics for army attack
+        for (Region region : myRegions) {
+            if (region.border && !visited.contains(region)) {
+                final Border t = Border.getBorder(region, visited, state);
+                borders.add(t);
+            }
+        }
 
 
+        visited.clear();
+
+        LinkedList<Region> bfsQueue = new LinkedList<>();
+
+        for (Region region : myRegions) {
+            if (region.border) {
+                bfsQueue.add(region);
+                visited.add(region);
+            }
+        }
+
+        while (!bfsQueue.isEmpty()) {
+            final Region currentRegion = bfsQueue.poll();
+            for (Region neigh : currentRegion.getNeighbors())
+                if (!visited.contains(neigh) && neigh.getPlayerName().equals(myName)) {
+                    visited.add(neigh);
+                    neigh.distanceToBorder = currentRegion.distanceToBorder + 1;
+                    bfsQueue.add(neigh);
+                }
+        }
+
+        for (Region region : myRegions) {
+            System.err.println(region.getId() + " " + region.distanceToBorder);
+        }
+
+        System.err.println("Calculated borders");
+        // Sortam dupa dimensiune
+        borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
+
+        attackList.clear();
+        // Heuristics for army attack
 
 
-
-		if (borders.size() > 0 && borders.get(0).getSize() < 5 && state.getRoundNumber() < 10) {
-			System.err.println("Got a border for minmax");
-			System.err.println(borders.get(0).toString());
-			final long startTime = System.nanoTime();
-
-
-
-			final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
-			final long endTime = System.nanoTime();
-			System.err.println("Minimax took:" + (double)(endTime - startTime)/1000000 + "ms");
-			System.err.println(Arrays.toString(r.moves.toArray()));
-
-			for (AttackTransferMove m : r.moves) {
-				if (m.getFromRegion().getPlayerName().equals(myName)) {
-					attackList.add(m);
-					state.getVisibleMap().getRegion(m.getFromRegion().getId()).spendArmies(m.getArmies());
-
-					// We don't want the heuristics to touch it
-					state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
-				}
-			}
-		}
+        // Old minimax. I should really take it out
+        if (borders.size() > 0 && borders.get(0).getSize() < 5 && state.getRoundNumber() > 10 && false) {
+            System.err.println("Got a border for minmax");
+            System.err.println(borders.get(0).toString());
+            final long startTime = System.nanoTime();
 
 
+            final BorderMinimax.Result r = minimax.minimax(borders.get(0), myName, 6);
+            final long endTime = System.nanoTime();
+            System.err.println("Minimax took:" + (double) (endTime - startTime) / 1000000 + "ms");
+            System.err.println(Arrays.toString(r.moves.toArray()));
 
-		List<Region> targets = state.getVisibleMap().getRegions().stream()
+            for (AttackTransferMove m : r.moves) {
+                if (m.getFromRegion().getPlayerName().equals(myName)) {
+                    attackList.add(m);
+                    state.getVisibleMap().getRegion(m.getFromRegion().getId()).spendArmies(m.getArmies());
+
+                    // We don't want the heuristics to touch it
+                    state.getVisibleMap().getRegion(m.getFromRegion().getId()).touched = true;
+                }
+            }
+        }
+
+        Orders greedyOrders = greedyHeuristic(state, armiesLeft, visibleRegions);
+        attackList.addAll(greedyOrders.attackTransferMoves);
+        return greedyOrders.placeArmiesMoves;
+    }
+
+    Orders greedyHeuristic(BotState state, int armiesLeft, List<Region> regions) {
+        final String myName = state.getMyPlayerName();
+
+        final Orders orders = new Orders();
+
+		List<Region> targets = regions.stream()
 				.filter(region1 -> !region1.getPlayerName().equals(myName))
 				.map(region2 -> {
-					region2.importance = region2.getSuperRegion().getArmiesReward() / region2.getArmies();
+					region2.importance =
+                            region2.getSuperRegion().getArmiesReward() / enemyArmiesInRegion(region2.getSuperRegion(), myName);
 					return region2;
 				})
 				.sorted((Region o1, Region o2) -> o2.importance - o1.importance)
@@ -202,7 +206,7 @@ public class BotStarter implements Bot
 				continue;
 			final int necessaryArmies;
 
-			if (!toRegion.getPlayerName().equals("neutral"))
+			if (!toRegion.getPlayerName().equals("neutral") && state.getRoundNumber() > 80)
 				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
 			else
 				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
@@ -210,18 +214,22 @@ public class BotStarter implements Bot
 				final int count = Math.min(necessaryArmies - fromRegion.getMoveableArmies(), armiesLeft);
 				armiesLeft -= count;
 				fromRegion.deployArmies(count);
-				placeArmiesMoves.add(new PlaceArmiesMove(myName, fromRegion, count));
+				orders.placeArmiesMoves.add(new PlaceArmiesMove(myName, fromRegion, count));
 			}
 			if (fromRegion.getMoveableArmies() >= necessaryArmies) {
-				attackList.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
+				orders.attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
 				fromRegion.spendArmies(necessaryArmies);
 			}
 		}
 
+        //TODO: Sometimes this code is not hit.
+        //      see http://pub.theaigames.com/competitions/warlight-ai-challenge-2/games/554089ab3a21cd6c3fc28a5f
+        if (armiesLeft > 0 && borders.size() > 0) {
+            orders.placeArmiesMoves.add(new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
+        }
 
 
-
-		return placeArmiesMoves;
+    	return orders;
 	}
 
 	@Override
