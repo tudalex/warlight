@@ -114,8 +114,16 @@ public class GeneralMinimax {
      */
     public GameState nextState(GameState state, GeneralMove myMove, GeneralMove opMove) {
         GameState next = state.clone();
-        List<Move> myMoves = new ArrayList<>();
-        List<Move> opMoves = new ArrayList<>();
+        List<Move> myMoves = Heuristics.greedyHeuristic(
+                state.getMyPlayerName(),
+                myMove.getNumber(),
+                myMove.getSuperRegion().getSubRegions(),
+                state.getRound());
+        List<Move> opMoves = Heuristics.greedyHeuristic(
+                state.getOpponentPlayerName(),
+                opMove.getNumber(),
+                opMove.getSuperRegion().getSubRegions(),
+                state.getRound());
         makeDeployMoves(next.getVisibleMap(), myMoves);
         makeDeployMoves(next.getVisibleMap(), opMoves);
         Iterator<AttackTransferMove> myIt = myMoves.stream().filter(m -> m instanceof AttackTransferMove)

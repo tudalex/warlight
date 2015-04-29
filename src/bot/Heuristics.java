@@ -3,12 +3,10 @@ package bot;
 import map.Region;
 import map.SuperRegion;
 import move.AttackTransferMove;
+import move.Move;
 import move.PlaceArmiesMove;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -22,10 +20,9 @@ public class Heuristics {
                 .sum();
     }
 
-    static Orders greedyHeuristic(BotState state, int armiesLeft, List<Region> regions) {
-        final String myName = state.getMyPlayerName();
+    static ArrayList<Move> greedyHeuristic(String myName, int armiesLeft, List<Region> regions, int round) {
 
-        final Orders orders = new Orders();
+        final ArrayList<Move> orders = new ArrayList<>();
         final HashMap<Region, Integer> importance = new HashMap<>();
         final HashMap<SuperRegion, Integer> superRegionEnemies = new HashMap<>();
         final HashSet<SuperRegion> superRegions = new HashSet<>();
@@ -60,7 +57,7 @@ public class Heuristics {
 				continue;
 			final int necessaryArmies;
 
-			if (!toRegion.getPlayerName().equals("neutral") && state.getRoundNumber() > 80)
+			if (!toRegion.getPlayerName().equals("neutral") && round > 80)
 				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
 			else
 				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
@@ -68,13 +65,50 @@ public class Heuristics {
 				final int count = Math.min(necessaryArmies - fromRegion.getMoveableArmies(), armiesLeft);
 				armiesLeft -= count;
 				fromRegion.deployArmies(count);
-				orders.placeArmiesMoves.add(new PlaceArmiesMove(myName, fromRegion, count));
+				orders.add(new PlaceArmiesMove(myName, fromRegion, count));
 			}
 			if (fromRegion.getMoveableArmies() >= necessaryArmies) {
-				orders.attackTransferMoves.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
+				orders.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
 				fromRegion.spendArmies(necessaryArmies);
 			}
 		}
+
+		for(final Region fromRegion : regions)
+		{
+			if(fromRegion.ownedByPlayer(myName) && !fromRegion.touched) //do an attack
+			{
+				ArrayList<Region> possibleToRegions = new ArrayList<Region>();
+				possibleToRegions.addAll(fromRegion.getNeighbors());
+				int armiesAvailable = fromRegion.getMoveableArmies();
+
+
+				// Sorting them based on the less ammount of armies
+				possibleToRegions.sort(new Comparator<Region>() {
+					@Override
+					public int compare(Region o1, Region o2) {
+						if (o1.getArmies() == o2.getArmies()) {
+							// Preferam regiunile care sunt in aceeasi superregiune
+							return ((o1.getSuperRegion().getId() == fromRegion.getId()) ? 0 : 1) -
+									((o2.getSuperRegion().getId() == fromRegion.getId()) ? 0 : 1);
+						}
+						return o1.getArmies() - o2.getArmies();
+					}
+				});
+
+				// Transfering troops to the ones that are close to the border where the real fighting happens
+				if (fromRegion.threat  < 5)
+					for (Region toRegion : possibleToRegions) {
+						if (toRegion.getPlayerName().equals(myName) && armiesAvailable > 0
+								&& toRegion.distanceToBorder < fromRegion.distanceToBorder) //do a transfer
+						{
+							orders.add(new AttackTransferMove(myName, fromRegion, toRegion, armiesAvailable));
+							armiesAvailable = 0;
+							break;
+						}
+					}
+			}
+		}
+		System.err.println("Finished");
 
     	return orders;
 	}

@@ -12,8 +12,11 @@ package bot;
 
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import map.Region;
+import move.Move;
 import move.PlaceArmiesMove;
 import move.AttackTransferMove;
 
@@ -53,16 +56,14 @@ public class BotParser {
 				if(parts[1].equals("place_armies")) 
 				{
 					//place armies
-					ArrayList<PlaceArmiesMove> placeArmiesMoves = bot.getPlaceArmiesMoves(currentState, Long.valueOf(parts[2]));
-					for(PlaceArmiesMove move : placeArmiesMoves)
-						output = output.concat(move.getString() + ",");
+					Stream<Move> placeArmiesMoves = bot.getPlaceArmiesMoves(currentState, Long.valueOf(parts[2]));
+					output = placeArmiesMoves.map(Move::getString).collect(Collectors.joining(","));
 				} 
 				else if(parts[1].equals("attack/transfer")) 
 				{
 					//attack/transfer
-					ArrayList<AttackTransferMove> attackTransferMoves = bot.getAttackTransferMoves(currentState, Long.valueOf(parts[2]));
-					for(AttackTransferMove move : attackTransferMoves)
-						output = output.concat(move.getString() + ",");
+					Stream<Move> attackTransferMoves = bot.getAttackTransferMoves(currentState, Long.valueOf(parts[2]));
+					output = attackTransferMoves.map(Move::getString).collect(Collectors.joining(","));
 				}
 				if(output.length() > 0)
 					System.out.println(output);

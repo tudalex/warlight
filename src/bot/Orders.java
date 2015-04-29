@@ -1,6 +1,7 @@
 package bot;
 
 import move.AttackTransferMove;
+import move.Move;
 import move.PlaceArmiesMove;
 
 import java.util.ArrayList;
@@ -22,4 +23,12 @@ public class Orders {
         placeArmiesMoves = thePlaceArmiesMoves;
         attackTransferMoves = theAttackTransferMoves;
     }
+
+    public ArrayList<Move> getMoveList() {
+        final ArrayList<Move> ret =  new ArrayList<>();
+        ret.addAll(placeArmiesMoves);
+        ret.addAll(attackTransferMoves);
+        return ret;
+    }
+
 }

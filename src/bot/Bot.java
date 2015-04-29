@@ -11,17 +11,19 @@
 package bot;
 
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
 import map.Region;
 import move.AttackTransferMove;
+import move.Move;
 import move.PlaceArmiesMove;
 
 public interface Bot {
 	
 	public Region getStartingRegion(BotState state, Long timeOut);
 	
-	public ArrayList<PlaceArmiesMove> getPlaceArmiesMoves(BotState state, Long timeOut);
+	public Stream<Move> getPlaceArmiesMoves(BotState state, Long timeOut);
 	
-	public ArrayList<AttackTransferMove> getAttackTransferMoves(BotState state, Long timeOut);
+	public Stream<Move> getAttackTransferMoves(BotState state, Long timeOut);
 
 }
