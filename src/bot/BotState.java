@@ -11,6 +11,7 @@
 package bot;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import map.Map;
 import map.Region;
@@ -187,8 +188,17 @@ public class BotState {
 		for(Region region : visibleMap.regions)
 			if(region.getPlayerName().equals("unknown"))
 				unknownRegions.add(region);
-		for(Region unknownRegion : unknownRegions)
-			visibleMap.getRegions().remove(unknownRegion);				
+		visibleMap.getRegions().removeAll(unknownRegions);
+		for (Region region : visibleMap.regions) {
+			LinkedList<Region> toRemove = new LinkedList<>();
+			for (Region neighbour : region.getNeighbors()) {
+				if (neighbour.getPlayerName().equals("unknown"))
+					toRemove.add(neighbour);
+			}
+			region.getNeighbors().removeAll(toRemove);
+		}
+		//for(Region unknownRegion : unknownRegions)
+			//visibleMap.getRegions().remove(unknownRegion);				
 	}
 
 	//Parses a list of the opponent's moves every round. 

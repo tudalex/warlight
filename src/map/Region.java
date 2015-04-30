@@ -14,7 +14,7 @@ import java.util.LinkedList;
 public class Region {
 
     private int id;
-    private LinkedList<Region> neighbors;
+    public LinkedList<Region> neighbors;
     private SuperRegion superRegion;
     private int armies;
     private int moveableArmies;

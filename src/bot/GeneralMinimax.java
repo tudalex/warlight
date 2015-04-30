@@ -72,7 +72,7 @@ public class GeneralMinimax {
             double sum = 0;
             for (int j = 0; j < scores[i].length; j++)
                 sum += scores[i][j].score * opProb[j];
-            opScores[i] = sum;
+            myScores[i] = sum;
         }
         double[] myProb = computeProbabilities(myScores, -1);
         double sum = 0;
