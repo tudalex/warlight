@@ -3,6 +3,7 @@ package bot;
 import map.Region;
 import map.SuperRegion;
 import move.AttackTransferMove;
+import move.GeneralMove;
 import move.Move;
 import move.PlaceArmiesMove;
 
@@ -19,6 +20,25 @@ public class Heuristics {
                 .mapToInt(Region::getArmies)
                 .sum();
     }
+
+	static ArrayList<Move> metaHeuristic(String myName, int armiesLeft, List<Region> regions, int round, GeneralMove move) {
+		HashSet<Region> importantRegions = new HashSet<>();
+		move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
+
+		final ArrayList<Move> moves = greedyHeuristic(
+				myName,
+				move.getNumber(),
+				new ArrayList<>(importantRegions),
+				round);
+		moves.addAll(greedyHeuristic(
+				myName,
+				armiesLeft,
+				regions.stream()
+						.filter(region -> !importantRegions.contains(region))
+						.collect(Collectors.toList()),
+				round));
+		return moves;
+	}
 
     static ArrayList<Move> greedyHeuristic(String myName, int armiesLeft, List<Region> regions, int round) {
 

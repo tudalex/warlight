@@ -36,7 +36,8 @@ public class BotStarter implements Bot
 	ArrayList<Border> borders = new ArrayList<>();
 	ArrayList<Region> myRegions = new ArrayList<>();
 
-	BorderMinimax minimax;
+	//BorderMinimax minimax;
+
 
 	ArrayList<Move> orders;
 
@@ -48,7 +49,7 @@ public class BotStarter implements Bot
 	 */
 	public Region getStartingRegion(BotState state, Long timeOut)
 	{
-		minimax = new BorderMinimax(state);
+		//minimax = new BorderMinimax(state);
 
 		Region bestRegion = null;
 		double bestRatio = -1;
@@ -132,20 +133,31 @@ public class BotStarter implements Bot
                     bfsQueue.add(neigh);
                 }
         }
-
-        for (Region region : myRegions) {
-            System.err.println(region.getId() + " " + region.distanceToBorder);
-        }
+//
+//        for (Region region : myRegions) {
+//            System.err.println(region.getId() + " " + region.distanceToBorder);
+//        }
 
         System.err.println("Calculated borders");
         // Sortam dupa dimensiune
         borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 
-        ArrayList<Move> greedyOrders = Heuristics.greedyHeuristic(state.getMyPlayerName(), armiesLeft, visibleRegions, state.getRoundNumber());
-        if (armiesLeft > 0 && borders.size() > 0) {
-            greedyOrders.add(
-                    new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
-        }
+        GeneralMinimax mm = new GeneralMinimax(state);
+        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), armiesLeft);
+        HashSet<Region> importantRegions = new HashSet<>();
+        bestMove.move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
+
+
+        ArrayList<Move> greedyOrders = Heuristics.metaHeuristic(
+                state.getMyPlayerName(),
+                armiesLeft, visibleRegions, state.getRoundNumber(),
+                bestMove.move);
+
+
+//        if (armiesLeft > 0 && borders.size() > 0) {
+//            greedyOrders.add(
+//                    new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
+//        }
         orders = greedyOrders;
         return orders.stream().filter(move -> move instanceof PlaceArmiesMove);
     }
