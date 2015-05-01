@@ -102,12 +102,14 @@ public class Heuristics {
 		}
 
 		if (armiesLeft  > 0) {
-			final Region regionToBeReinforced = regions.stream()
+			final Optional<Region> regionToBeReinforced = regions.stream()
 					.filter(region -> region.getPlayerName().equals(myName))
-					.max((o1, o2) -> o2.threat - o1.threat).get();
-			orders.add(new PlaceArmiesMove(myName, regionToBeReinforced, armiesLeft));
-			regionToBeReinforced.deployArmies(armiesLeft);
-			armiesLeft = 0;
+					.max((o1, o2) -> o2.threat - o1.threat);
+            if (regionToBeReinforced.isPresent()) {
+                orders.add(new PlaceArmiesMove(myName, regionToBeReinforced.get(), armiesLeft));
+                regionToBeReinforced.get().deployArmies(armiesLeft);
+                armiesLeft = 0;
+            }
 		}
 
 

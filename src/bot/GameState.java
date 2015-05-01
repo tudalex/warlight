@@ -29,6 +29,7 @@ public class GameState {
         round = state.getRoundNumber();
         myName = state.getMyPlayerName();
         opponentName = state.getOpponentPlayerName();
+        opArmiesPerTurn = 5;
     }
 
     public Map getVisibleMap() {

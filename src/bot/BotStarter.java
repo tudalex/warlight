@@ -143,7 +143,7 @@ public class BotStarter implements Bot
         borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 
         GeneralMinimax mm = new GeneralMinimax(state);
-        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 13);
+        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 1);
         System.err.println("Minimax iterations: "+ mm.iterations);
         HashSet<Region> importantRegions = new HashSet<>();
         bestMove.move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
