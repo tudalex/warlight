@@ -38,8 +38,10 @@ public class GeneralMinimax {
         }
         GeneralMove[] myMoves = getMoves(state, state.getMyPlayerName());
         GeneralMove[] opMoves = getMoves(state, state.getOpponentPlayerName());
-        System.err.println("My moves: "+ myMoves.length);
-        System.err.println("Op moves: "+ myMoves.length);
+        //System.err.println("My moves: "+ myMoves.length);
+        //System.err.println("Op moves: "+ myMoves.length);
+//        if (opMoves.length * myMoves.length > 220)
+//            return new BestMove(Double.NEGATIVE_INFINITY, null);
         BestMove[][] scores = new BestMove[myMoves.length][opMoves.length];
         for (int i = 0; i < myMoves.length; i++) {
             for (int j = 0; j < opMoves.length; j++) {
@@ -72,7 +74,7 @@ public class GeneralMinimax {
         }
         BestMove best = new BestMove(Double.NEGATIVE_INFINITY, null);
         for (int i = 0; i < myScores.length; i++) {
-            if (best.score < myScores[i]) { 
+            if (best.score < myScores[i]) {
                 best.score = myScores[i];
                 best.move = myMoves[i];
             }
@@ -260,6 +262,11 @@ public class GeneralMinimax {
         public BestMove(double score, GeneralMove move) {
             this.score = score;
             this.move = move;
+        }
+
+        @Override
+        public String toString() {
+            return "score: "+ score + " move: " + move;
         }
     }
 

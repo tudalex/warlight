@@ -36,6 +36,7 @@ public class BotStarter implements Bot
 	ArrayList<Border> borders = new ArrayList<>();
 	ArrayList<Region> myRegions = new ArrayList<>();
 
+    final static boolean GREEDY = false;
 	//BorderMinimax minimax;
 
 
@@ -143,17 +144,18 @@ public class BotStarter implements Bot
         borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 
         GeneralMinimax mm = new GeneralMinimax(state);
-        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 1);
+        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 2);
         System.err.println("Minimax iterations: "+ mm.iterations);
-        HashSet<Region> importantRegions = new HashSet<>();
-        bestMove.move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
-        System.err.println("Attacking SuperRegion " + bestMove.move.getSuperRegion().getId());
-
-        ArrayList<Move> greedyOrders = Heuristics.metaHeuristic(
-                state.getMyPlayerName(),
-                armiesLeft, visibleRegions, state.getRoundNumber(),
-                bestMove.move);
-
+        System.err.println("Best move: " + bestMove);
+        final ArrayList<Move> greedyOrders;
+        if (bestMove.move == null || GREEDY) {
+            greedyOrders = Heuristics.greedyHeuristic(state.getMyPlayerName(), armiesLeft, visibleRegions, state.getRoundNumber());
+        } else {
+            greedyOrders = Heuristics.metaHeuristic(
+                    state.getMyPlayerName(),
+                    armiesLeft, visibleRegions, state.getRoundNumber(),
+                    bestMove.move);
+        }
 
 //        if (armiesLeft > 0 && borders.size() > 0) {
 //            greedyOrders.add(
