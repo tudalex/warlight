@@ -82,7 +82,7 @@ public class BotStarter implements Bot
 	public Stream<Move> getPlaceArmiesMoves(BotState state, Long timeOut) {
         final LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
 
-        System.err.println("Round " + state.getRoundNumber());
+        System.err.println("Round " + state.getRoundNumber() + " got " +  state.getStartingArmies() + " armies ");
 
         myRegions.clear();
         for (Region region : visibleRegions) {
@@ -147,7 +147,7 @@ public class BotStarter implements Bot
         System.err.println("Minimax iterations: "+ mm.iterations);
         HashSet<Region> importantRegions = new HashSet<>();
         bestMove.move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
-
+        System.err.println("Attacking SuperRegion " + bestMove.move.getSuperRegion().getId());
 
         ArrayList<Move> greedyOrders = Heuristics.metaHeuristic(
                 state.getMyPlayerName(),
@@ -160,6 +160,7 @@ public class BotStarter implements Bot
 //                    new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
 //        }
         orders = greedyOrders;
+        System.err.println("Final orders: " + orders);
         return orders.stream().filter(move -> move instanceof PlaceArmiesMove);
     }
 

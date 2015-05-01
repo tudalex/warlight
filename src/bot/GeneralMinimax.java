@@ -38,8 +38,8 @@ public class GeneralMinimax {
         }
         GeneralMove[] myMoves = getMoves(state, state.getMyPlayerName());
         GeneralMove[] opMoves = getMoves(state, state.getOpponentPlayerName());
-        System.err.println("My moves: "+ Arrays.toString(myMoves));
-        System.err.println("Op moves: "+ Arrays.toString(opMoves));
+        System.err.println("My moves: "+ myMoves.length);
+        System.err.println("Op moves: "+ myMoves.length);
         BestMove[][] scores = new BestMove[myMoves.length][opMoves.length];
         for (int i = 0; i < myMoves.length; i++) {
             for (int j = 0; j < opMoves.length; j++) {

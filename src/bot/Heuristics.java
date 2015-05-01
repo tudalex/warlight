@@ -27,17 +27,17 @@ public class Heuristics {
 	static ArrayList<Move> metaHeuristic(String myName, int armiesLeft, List<Region> regions, int round, GeneralMove move) {
 		HashSet<Region> importantRegions = new HashSet<>();
 		move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
-        System.err.println("Attacking SuperRegion " + move.getSuperRegion().getId());
-        System.err.println("First heuristic");
+
+        //System.err.println("First heuristic");
 		final ArrayList<Move> moves = greedyHeuristic(
 				myName,
 				move.getNumber(),
 				new ArrayList<>(importantRegions),
 				round);
-        System.err.println("Second heuristic");
+        //System.err.println("Second heuristic");
 		moves.addAll(greedyHeuristic(
                 myName,
-                armiesLeft,
+                armiesLeft - move.getNumber(),
                 regions.stream()
                         .filter(region -> !importantRegions.contains(region))
                         .collect(Collectors.toList()),
@@ -57,8 +57,8 @@ public class Heuristics {
         regions.stream().forEach(region -> {
             superRegions.add(region.getSuperRegion());
             region.update();
-            if (region.getPlayerName().equals(myName))
-                System.err.println("" + region.getId() + " " + region.threat);
+//            if (region.getPlayerName().equals(myName))
+//                System.err.println("" + region.getId() + " " + region.threat);
         });
         superRegions.stream().forEach(superRegion ->
 				superRegionEnemies.put(superRegion, enemyArmiesInSuperRegion(superRegion, myName)));
@@ -149,9 +149,9 @@ public class Heuristics {
 					}
 			}
 		}
-		System.err.println("Finished");
+		//System.err.println("Finished");
 
-        System.err.println(orders);
+
 
     	return orders;
 	}
