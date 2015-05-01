@@ -10,12 +10,13 @@ import move.PlaceArmiesMove;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.logging.*;
+import java.util.stream.Stream;
 
 /**
  * Created by tudalex on 29/04/15.
  */
 public class Heuristics {
-    static int DEFENSIVE_MODE = 20;
+    static int DEFENSIVE_MODE = 40;
     static Logger log = Logger.getLogger( Heuristics.class.getName() );
     static public int enemyArmiesInSuperRegion(SuperRegion superRegion, String playerName) {
         return superRegion.getSubRegions().stream()
@@ -33,7 +34,8 @@ public class Heuristics {
 				myName,
 				move.getNumber(),
 				new ArrayList<>(importantRegions),
-				round);
+				round,
+                move.getSuperRegion().getId());
         //System.err.println("Second heuristic");
 		moves.addAll(greedyHeuristic(
                 myName,
@@ -46,6 +48,10 @@ public class Heuristics {
 	}
 
     static ArrayList<Move> greedyHeuristic(String myName, int armiesLeft, List<Region> regions, int round) {
+        return greedyHeuristic(myName,armiesLeft,regions,round,-1);
+    }
+
+    static ArrayList<Move> greedyHeuristic(String myName, int armiesLeft, List<Region> regions, int round, int superRegionLimit) {
 
         final ArrayList<Move> orders = new ArrayList<>();
         final HashMap<Region, Integer> importance = new HashMap<>();
@@ -77,9 +83,12 @@ public class Heuristics {
 
 
 		for (Region toRegion : targets) {
-			Region fromRegion = toRegion.getNeighbors().stream()
-					.filter(region1 -> region1.getPlayerName().equals(myName))
-					.sorted((o1, o2) -> o2.getArmies() - o1.getArmies())
+			Stream<Region> regionStream = toRegion.getNeighbors().stream()
+					.filter(region1 -> region1.getPlayerName().equals(myName));
+            if (superRegionLimit != -1)
+                regionStream = regionStream.filter(region -> region.getSuperRegion().getId() == superRegionLimit);
+
+			Region fromRegion = regionStream.sorted((o1, o2) -> o2.getArmies() - o1.getArmies())
 					.findFirst().orElse(null);
 			if (fromRegion == null)
 				continue;
