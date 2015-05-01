@@ -156,7 +156,7 @@ public class GeneralMinimax {
                 return 0;
             }
             String op = opponent.get(r.getPlayerName());
-            return r.getArmies() - r.getNeighbors().stream().filter(n -> r.getPlayerName().equals(opponent.get(op)))
+            return r.getArmies() - r.getNeighbors().stream().filter(n -> n.getPlayerName().equals(opponent.get(op)))
                     .mapToInt(n -> n.getArmies()).sum();
         }).sum();
         return score;
@@ -263,4 +263,20 @@ public class GeneralMinimax {
         }
     }
 
+    public static void main(String[] args) {
+        double[][] mat = {{2, -1, 3}, {-3, 2, 1}, {-1, 0, 2}};
+        BestMove[][] scores = new BestMove[3][3];
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+                scores[i][j] = new BestMove(mat[i][j], new GeneralMove(null, 3 * i + j));
+        GeneralMove[] moves = {
+            new GeneralMove(null, 1),
+            new GeneralMove(null, 2),
+            new GeneralMove(null, 3)
+        };
+        GeneralMinimax minimax = new GeneralMinimax(new BotState());
+        BestMove best = minimax.computeScore(scores, moves);
+        System.out.println(best.score);
+    }
+    
 }
