@@ -60,5 +60,9 @@ public class PlaceArmiesMove extends Move {
 			return getPlayerName() + " illegal_move " + getIllegalMove();
 				
 	}
-	
+
+	@Override
+	public String toString() {
+		return getString();
+	}
 }

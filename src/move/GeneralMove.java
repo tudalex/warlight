@@ -38,6 +38,11 @@ public class GeneralMove {
     }
 
     @Override
+    public String toString() {
+        return "SuperRegion: " + getSuperRegion().getId() + " numar de trupe: " + getNumber();
+    }
+
+    @Override
     public int hashCode() {
         int hash = 5;
         hash = 67 * hash + Objects.hashCode(this.superRegion);

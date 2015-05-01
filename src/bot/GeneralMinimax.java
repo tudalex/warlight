@@ -5,13 +5,7 @@
  */
 package bot;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import map.Map;
 import map.Region;
@@ -30,7 +24,7 @@ public class GeneralMinimax {
     private static final Random random = new Random();
 
     private java.util.Map<String, String> opponent = new HashMap<>();
-    private int iterations = 0;
+    public int iterations = 0;
 
     public GeneralMinimax(BotState state) {
         opponent.put(state.getMyPlayerName(), state.getOpponentPlayerName());
@@ -44,6 +38,8 @@ public class GeneralMinimax {
         }
         GeneralMove[] myMoves = getMoves(state, state.getMyPlayerName());
         GeneralMove[] opMoves = getMoves(state, state.getOpponentPlayerName());
+        System.err.println("My moves: "+ Arrays.toString(myMoves));
+        System.err.println("Op moves: "+ Arrays.toString(opMoves));
         BestMove[][] scores = new BestMove[myMoves.length][opMoves.length];
         for (int i = 0; i < myMoves.length; i++) {
             for (int j = 0; j < opMoves.length; j++) {

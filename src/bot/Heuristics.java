@@ -9,11 +9,14 @@ import move.PlaceArmiesMove;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.logging.*;
 
 /**
  * Created by tudalex on 29/04/15.
  */
 public class Heuristics {
+    static int DEFENSIVE_MODE = 20;
+    static Logger log = Logger.getLogger( Heuristics.class.getName() );
     static public int enemyArmiesInSuperRegion(SuperRegion superRegion, String playerName) {
         return superRegion.getSubRegions().stream()
                 .filter(region -> !region.getPlayerName().equals(playerName))
@@ -24,19 +27,21 @@ public class Heuristics {
 	static ArrayList<Move> metaHeuristic(String myName, int armiesLeft, List<Region> regions, int round, GeneralMove move) {
 		HashSet<Region> importantRegions = new HashSet<>();
 		move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
-
+        System.err.println("Attacking SuperRegion " + move.getSuperRegion().getId());
+        System.err.println("First heuristic");
 		final ArrayList<Move> moves = greedyHeuristic(
 				myName,
 				move.getNumber(),
 				new ArrayList<>(importantRegions),
 				round);
+        System.err.println("Second heuristic");
 		moves.addAll(greedyHeuristic(
-				myName,
-				armiesLeft,
-				regions.stream()
-						.filter(region -> !importantRegions.contains(region))
-						.collect(Collectors.toList()),
-				round));
+                myName,
+                armiesLeft,
+                regions.stream()
+                        .filter(region -> !importantRegions.contains(region))
+                        .collect(Collectors.toList()),
+                round));
 		return moves;
 	}
 
@@ -47,10 +52,13 @@ public class Heuristics {
         final HashMap<SuperRegion, Integer> superRegionEnemies = new HashMap<>();
         final HashSet<SuperRegion> superRegions = new HashSet<>();
 
+
         // Precalculating SuperRegion information
         regions.stream().forEach(region -> {
             superRegions.add(region.getSuperRegion());
             region.update();
+            if (region.getPlayerName().equals(myName))
+                System.err.println("" + region.getId() + " " + region.threat);
         });
         superRegions.stream().forEach(superRegion ->
 				superRegionEnemies.put(superRegion, enemyArmiesInSuperRegion(superRegion, myName)));
@@ -77,7 +85,7 @@ public class Heuristics {
 				continue;
 			final int necessaryArmies;
 
-			if (!toRegion.getPlayerName().equals("neutral") && round > 80)
+			if (!toRegion.getPlayerName().equals("neutral") && round > DEFENSIVE_MODE)
 				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
 			else
 				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
@@ -93,6 +101,17 @@ public class Heuristics {
 			}
 		}
 
+		if (armiesLeft  > 0) {
+			final Region regionToBeReinforced = regions.stream()
+					.filter(region -> region.getPlayerName().equals(myName))
+					.max((o1, o2) -> o2.threat - o1.threat).get();
+			orders.add(new PlaceArmiesMove(myName, regionToBeReinforced, armiesLeft));
+			regionToBeReinforced.deployArmies(armiesLeft);
+			armiesLeft = 0;
+		}
+
+
+		// Move armies to borders
 		for(final Region fromRegion : regions)
 		{
 			if(fromRegion.ownedByPlayer(myName) && !fromRegion.touched) //do an attack
@@ -129,6 +148,8 @@ public class Heuristics {
 			}
 		}
 		System.err.println("Finished");
+
+        System.err.println(orders);
 
     	return orders;
 	}
