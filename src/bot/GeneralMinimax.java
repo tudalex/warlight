@@ -122,8 +122,9 @@ public class GeneralMinimax {
         } else {
             armies = state.getOpArmiesPerTurn();
         }
+        final int d = armies / 10 + 1;
         superRegions.stream().forEach(sr -> {
-            for (int i = 1; i <= armies; i++) {
+            for (int i = 1; i <= armies; i += d) {
                 moves.add(new GeneralMove(sr, i));
             }
         });
