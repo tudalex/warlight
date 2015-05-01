@@ -59,8 +59,8 @@ public class GeneralMinimax {
                 if (scores[j][i].score < min) {
                     min = scores[j][i].score;
                 }
-                opScores[i] = min;
             }
+            opScores[i] = min;
         }
         double[] opProb = computeProbabilities(opScores, 1);
         double[] myScores = new double[scores.length];
@@ -70,20 +70,28 @@ public class GeneralMinimax {
                 sum += scores[i][j].score * opProb[j];
             myScores[i] = sum;
         }
-        double[] myProb = computeProbabilities(myScores, -1);
-        double sum = 0;
+        BestMove best = new BestMove(Double.NEGATIVE_INFINITY, null);
         for (int i = 0; i < myScores.length; i++) {
-            sum += myScores[i] * myProb[i];
+            if (best.score < myScores[i]) { 
+                best.score = myScores[i];
+                best.move = myMoves[i];
+            }
         }
-        int chosen = choseMove(myProb);
-        return new BestMove(sum, myMoves[chosen]);
+        return best;
+//        double[] myProb = computeProbabilities(myScores, -1);
+//        double sum = 0;
+//        for (int i = 0; i < myScores.length; i++) {
+//            sum += myScores[i] * myProb[i];
+//        }
+//        int chosen = choseMove(myProb);
+//        return new BestMove(sum, myMoves[chosen]);
     }
     
     private double[] computeProbabilities(double[] scores, int sign) {
         double max = Double.NEGATIVE_INFINITY;
         for (double s : scores)
             if (s * sign > max) {
-                max = s;
+                max = s * sign;
             }
         double sum = 0;
         for (int i = 0; i < scores.length; i++) {
