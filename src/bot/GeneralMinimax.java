@@ -72,9 +72,9 @@ public class GeneralMinimax {
                 sum += scores[i][j].score * opProb[j];
             myScores[i] = sum;
         }
-        System.err.println("scores:" + Arrays.deepToString(scores));
-        System.err.println("opProb:" + Arrays.toString(opProb));
-        System.err.println("myScores: " + Arrays.toString(myScores));
+//        System.err.println("scores:" + Arrays.deepToString(scores));
+//        System.err.println("opProb:" + Arrays.toString(opProb));
+//        System.err.println("myScores: " + Arrays.toString(myScores));
         BestMove best = new BestMove(Double.NEGATIVE_INFINITY, null);
         for (int i = 0; i < myScores.length; i++) {
             if (best.score < myScores[i]) {
@@ -182,17 +182,19 @@ public class GeneralMinimax {
      */
     public GameState nextState(GameState state, GeneralMove myMove, GeneralMove opMove) {
         GameState next = state.clone();
+        GameState myState = state.clone();
+        GameState opState = state.clone();
         List<Move> myMoves = Heuristics.metaHeuristic(
-                state.getMyPlayerName(),
+                myState.getMyPlayerName(),
                 myMove.getNumber(),
-                state.getVisibleMap().getRegions(),
-                state.getRound(),
+                myState.getVisibleMap().getRegions(),
+                myState.getRound(),
                 myMove);
         List<Move> opMoves = Heuristics.metaHeuristic(
-                state.getOpponentPlayerName(),
+                opState.getOpponentPlayerName(),
                 opMove.getNumber(),
-                state.getVisibleMap().getRegions(),
-                state.getRound(),
+                opState.getVisibleMap().getRegions(),
+                opState.getRound(),
                 myMove);
         makeDeployMoves(next.getVisibleMap(), myMoves);
         makeDeployMoves(next.getVisibleMap(), opMoves);

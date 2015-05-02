@@ -171,8 +171,8 @@ public class BotState {
 		{
 			try {
 				Region region = visibleMap.getRegion(Integer.parseInt(mapInput[i]));
-				String playerName = mapInput[i+1];
-				int armies = Integer.parseInt(mapInput[i+2]);
+				final String playerName = mapInput[i+1];
+				final int armies = Integer.parseInt(mapInput[i+2]);
 				
 				region.setPlayerName(playerName);
 				region.setArmies(armies);
