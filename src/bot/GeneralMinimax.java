@@ -34,14 +34,15 @@ public class GeneralMinimax {
     public BestMove minimax(GameState state, int depth) {
         iterations++;
         if (depth == 0) {
-            return new BestMove(evaluate(state), null);
+            return new BestMove(evaluate(state), null, null);
         }
         GeneralMove[] myMoves = getMoves(state, state.getMyPlayerName());
         GeneralMove[] opMoves = getMoves(state, state.getOpponentPlayerName());
         //System.err.println("My moves: "+ myMoves.length);
         //System.err.println("Op moves: "+ myMoves.length);
-//        if (opMoves.length * myMoves.length > 220)
-//            return new BestMove(Double.NEGATIVE_INFINITY, null);
+        if (opMoves.length * myMoves.length > 220) {
+            depth = 1;
+        }
         BestMove[][] scores = new BestMove[myMoves.length][opMoves.length];
         for (int i = 0; i < myMoves.length; i++) {
             for (int j = 0; j < opMoves.length; j++) {
@@ -50,10 +51,10 @@ public class GeneralMinimax {
                 scores[i][j] = score;
             }
         }
-        return computeScore(scores, myMoves);
+        return computeScore(scores, myMoves, opMoves);
     }
-    
-    private BestMove computeScore(BestMove[][] scores, GeneralMove[] myMoves) {
+
+    private BestMove computeScore(BestMove[][] scores, GeneralMove[] myMoves, GeneralMove[] opMoves) {
         double[] opScores = new double[scores[0].length];
         for (int i = 0; i < opScores.length; i++) {
             double min = Double.POSITIVE_INFINITY;
@@ -64,26 +65,24 @@ public class GeneralMinimax {
             }
             opScores[i] = min;
         }
-        double[] opProb = computeProbabilities(opScores, 1);
+        double[] opProb = computeProbabilities(opScores, -1);
         double[] myScores = new double[scores.length];
         for (int i = 0; i < scores.length; i++) {
             double sum = 0;
-            for (int j = 0; j < scores[i].length; j++)
+            for (int j = 0; j < scores[i].length; j++) {
                 sum += scores[i][j].score * opProb[j];
+            }
             myScores[i] = sum;
         }
 //        System.err.println("scores:" + Arrays.deepToString(scores));
 //        System.err.println("opProb:" + Arrays.toString(opProb));
 //        System.err.println("myScores: " + Arrays.toString(myScores));
-        BestMove best = new BestMove(Double.NEGATIVE_INFINITY, null);
-        for (int i = 0; i < myScores.length; i++) {
-            if (best.score < myScores[i]) {
-                best.score = myScores[i];
-                best.move = myMoves[i];
-            }
-        }
+        double[] myProb = computeProbabilities(myScores, 1);
+        int move = choseBestMove(myProb, 1);
+        BestMove best = new BestMove(myScores[move], myMoves[move], null);
+        best.opMove = opMoves[choseBestMove(opProb, -1)];
         return best;
-//        double[] myProb = computeProbabilities(myScores, -1);
+
 //        double sum = 0;
 //        for (int i = 0; i < myScores.length; i++) {
 //            sum += myScores[i] * myProb[i];
@@ -91,25 +90,26 @@ public class GeneralMinimax {
 //        int chosen = choseMove(myProb);
 //        return new BestMove(sum, myMoves[chosen]);
     }
-    
+
     private double[] computeProbabilities(double[] scores, int sign) {
-        double max = Double.NEGATIVE_INFINITY;
-        for (double s : scores)
-            if (s * sign > max) {
-                max = s * sign;
+        double min = Double.POSITIVE_INFINITY;
+        for (double s : scores) {
+            if (s * sign < min) {
+                min = s * sign;
             }
+        }
         double sum = 0;
         for (int i = 0; i < scores.length; i++) {
-            sum += scores[i] * sign - max;
+            sum += scores[i] * sign - min;
         }
         double[] prob = new double[scores.length];
         for (int i = 0; i < scores.length; i++) {
-            prob[i] = (scores[i] * sign - max) / sum;
+            prob[i] = (scores[i] * sign - min) / sum;
         }
         return prob;
     }
-    
-    private int choseMove(double[] prob) {
+
+    private int choseRandomMove(double[] prob) {
         double r = random.nextDouble();
         double sum = 0;
         for (int i = 0; i < prob.length; i++) {
@@ -119,6 +119,18 @@ public class GeneralMinimax {
             sum += prob[i];
         }
         return prob.length - 1;
+    }
+
+    private int choseBestMove(double[] prob, int sign) {
+        double max = Double.NEGATIVE_INFINITY;
+        int move = 0;
+        for (int i = 0; i < prob.length; i++) {
+            if (prob[i] * sign > max) {
+                max = prob[i] * sign;
+                move = i;
+            }
+        }
+        return move;
     }
 
     public GeneralMove[] getMoves(GameState state, String player) {
@@ -266,31 +278,34 @@ public class GeneralMinimax {
 
         public double score;
         public GeneralMove move;
+        public GeneralMove opMove;
 
-        public BestMove(double score, GeneralMove move) {
+        public BestMove(double score, GeneralMove move, GeneralMove opMove) {
             this.score = score;
             this.move = move;
+            this.opMove = opMove;
         }
 
         @Override
         public String toString() {
-            return "score: "+ score + " move: " + move;
+            return "score: " + score + " move: " + move;
         }
     }
-
+    
+//    public static void main(String[] args) {
 //        double[][] mat = {{2, -1, 3}, {-3, 2, 1}, {-1, 0, 2}};
 //        BestMove[][] scores = new BestMove[3][3];
 //        for (int i = 0; i < 3; i++)
 //            for (int j = 0; j < 3; j++)
-//                scores[i][j] = new BestMove(mat[i][j], new GeneralMove(null, 3 * i + j));
+//                scores[i][j] = new BestMove(mat[i][j], new GeneralMove(null, 3 * i + j), null);
 //        GeneralMove[] moves = {
 //            new GeneralMove(null, 1),
 //            new GeneralMove(null, 2),
 //            new GeneralMove(null, 3)
 //        };
 //        GeneralMinimax minimax = new GeneralMinimax(new BotState());
-//        BestMove best = minimax.computeScore(scores, moves);
+//        BestMove best = minimax.computeScore(scores, moves, moves);
 //        System.out.println(best.score);
 //    }
-//
+
 }
