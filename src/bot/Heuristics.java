@@ -17,6 +17,7 @@ import java.util.stream.Stream;
  */
 public class Heuristics {
     static int DEFENSIVE_MODE = 40;
+    static boolean DEBUG = false;
     static Logger log = Logger.getLogger( Heuristics.class.getName() );
     static public int enemyArmiesInSuperRegion(SuperRegion superRegion, String playerName) {
         return superRegion.getSubRegions().stream()
@@ -41,7 +42,7 @@ public class Heuristics {
                 myName,
                 armiesLeft - move.getNumber(),
                 regions.stream()
-                        .filter(region -> !importantRegions.contains(region))
+                        .filter(region -> region.getSuperRegion().getId() != move.getSuperRegion().getId())
                         .collect(Collectors.toList()),
                 round));
 		return moves;
@@ -83,22 +84,33 @@ public class Heuristics {
 
 
 		for (Region toRegion : targets) {
-			Stream<Region> regionStream = toRegion.getNeighbors().stream()
+            if (DEBUG)
+                System.err.print("Target: " + toRegion);
+            Stream<Region> regionStream = toRegion.getNeighbors().stream()
 					.filter(region1 -> region1.getPlayerName().equals(myName));
             if (superRegionLimit != -1)
                 regionStream = regionStream.filter(region -> region.getSuperRegion().getId() == superRegionLimit);
 
 			Region fromRegion = regionStream.sorted((o1, o2) -> o2.getArmies() - o1.getArmies())
 					.findFirst().orElse(null);
-			if (fromRegion == null)
-				continue;
-			final int necessaryArmies;
+			if (fromRegion == null) {
+                if (DEBUG)
+                    System.err.println(" no attack region");
+                continue;
+            }
+            if (DEBUG)
+                System.err.println(" attacking from " + fromRegion);
+            final int necessaryArmies;
 
 			if (!toRegion.getPlayerName().equals("neutral") && round > DEFENSIVE_MODE)
 				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
 			else
 				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
-			if (fromRegion.getMoveableArmies() < necessaryArmies && armiesLeft > 0) {
+            if (DEBUG)
+                System.err.println("Necessary armies: " + necessaryArmies
+                        + " available armies:" + fromRegion.getMoveableArmies()
+                        + " armies: " + fromRegion.getArmies());
+            if (fromRegion.getMoveableArmies() < necessaryArmies && armiesLeft > 0) {
 				final int count = Math.min(necessaryArmies - fromRegion.getMoveableArmies(), armiesLeft);
 				armiesLeft -= count;
 				fromRegion.deployArmies(count);
@@ -108,6 +120,10 @@ public class Heuristics {
 				orders.add(new AttackTransferMove(myName, fromRegion, toRegion, necessaryArmies));
 				fromRegion.spendArmies(necessaryArmies);
 			}
+            if (DEBUG)
+                System.err.println("Armies left: " + armiesLeft);
+            if (armiesLeft == 0)
+                break;
 		}
 
 		if (armiesLeft  > 0) {
@@ -159,7 +175,8 @@ public class Heuristics {
 			}
 		}
 		//System.err.println("Finished");
-
+        if (DEBUG)
+            System.err.println("Orders: " + orders);
 
 
     	return orders;

@@ -72,6 +72,9 @@ public class GeneralMinimax {
                 sum += scores[i][j].score * opProb[j];
             myScores[i] = sum;
         }
+        System.err.println("scores:" + Arrays.deepToString(scores));
+        System.err.println("opProb:" + Arrays.toString(opProb));
+        System.err.println("myScores: " + Arrays.toString(myScores));
         BestMove best = new BestMove(Double.NEGATIVE_INFINITY, null);
         for (int i = 0; i < myScores.length; i++) {
             if (best.score < myScores[i]) {
@@ -143,6 +146,7 @@ public class GeneralMinimax {
 
     public double evaluate(GameState state) {
         double score = state.getVisibleMap().superRegions.stream()
+                .filter(superRegion -> superRegion.getSubRegions().size() != 0)
                 .mapToDouble(sr -> {
                     long myRegions = sr.getSubRegions().stream()
                     .filter(r -> r.getPlayerName().equals(state.getMyPlayerName()))
@@ -150,9 +154,11 @@ public class GeneralMinimax {
                     long opRegions = sr.getSubRegions().stream()
                     .filter(r -> r.getPlayerName().equals(state.getOpponentPlayerName()))
                     .count();
+                    //System.err.println("SuperRegion: " + sr.getId() + " " + sr.getSubRegions().size());
                     return Math.pow(2, myRegions * 1. / sr.getSubRegions().size()) * sr.getArmiesReward()
                     - Math.pow(2, opRegions * 1. / sr.getSubRegions().size()) * sr.getArmiesReward();
                 }).sum();
+
         score += state.getVisibleMap().regions.stream().mapToInt(r -> {
             if (!opponent.containsKey(r.getPlayerName())) {
                 return 0;
@@ -179,13 +185,13 @@ public class GeneralMinimax {
         List<Move> myMoves = Heuristics.metaHeuristic(
                 state.getMyPlayerName(),
                 myMove.getNumber(),
-                myMove.getSuperRegion().getSubRegions(),
+                state.getVisibleMap().getRegions(),
                 state.getRound(),
                 myMove);
         List<Move> opMoves = Heuristics.metaHeuristic(
                 state.getOpponentPlayerName(),
                 opMove.getNumber(),
-                opMove.getSuperRegion().getSubRegions(),
+                state.getVisibleMap().getRegions(),
                 state.getRound(),
                 myMove);
         makeDeployMoves(next.getVisibleMap(), myMoves);
@@ -270,20 +276,19 @@ public class GeneralMinimax {
         }
     }
 
-    public static void main(String[] args) {
-        double[][] mat = {{2, -1, 3}, {-3, 2, 1}, {-1, 0, 2}};
-        BestMove[][] scores = new BestMove[3][3];
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                scores[i][j] = new BestMove(mat[i][j], new GeneralMove(null, 3 * i + j));
-        GeneralMove[] moves = {
-            new GeneralMove(null, 1),
-            new GeneralMove(null, 2),
-            new GeneralMove(null, 3)
-        };
-        GeneralMinimax minimax = new GeneralMinimax(new BotState());
-        BestMove best = minimax.computeScore(scores, moves);
-        System.out.println(best.score);
-    }
-    
+//        double[][] mat = {{2, -1, 3}, {-3, 2, 1}, {-1, 0, 2}};
+//        BestMove[][] scores = new BestMove[3][3];
+//        for (int i = 0; i < 3; i++)
+//            for (int j = 0; j < 3; j++)
+//                scores[i][j] = new BestMove(mat[i][j], new GeneralMove(null, 3 * i + j));
+//        GeneralMove[] moves = {
+//            new GeneralMove(null, 1),
+//            new GeneralMove(null, 2),
+//            new GeneralMove(null, 3)
+//        };
+//        GeneralMinimax minimax = new GeneralMinimax(new BotState());
+//        BestMove best = minimax.computeScore(scores, moves);
+//        System.out.println(best.score);
+//    }
+//
 }

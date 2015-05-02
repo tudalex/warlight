@@ -144,17 +144,19 @@ public class BotStarter implements Bot
         borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 
         GeneralMinimax mm = new GeneralMinimax(state);
-        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 2);
+        GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 1);
         System.err.println("Minimax iterations: "+ mm.iterations);
         System.err.println("Best move: " + bestMove);
         final ArrayList<Move> greedyOrders;
         if (bestMove.move == null || GREEDY) {
             greedyOrders = Heuristics.greedyHeuristic(state.getMyPlayerName(), armiesLeft, visibleRegions, state.getRoundNumber());
         } else {
+            Heuristics.DEBUG = true;
             greedyOrders = Heuristics.metaHeuristic(
                     state.getMyPlayerName(),
                     armiesLeft, visibleRegions, state.getRoundNumber(),
                     bestMove.move);
+            Heuristics.DEBUG = false;
         }
 
 //        if (armiesLeft > 0 && borders.size() > 0) {
