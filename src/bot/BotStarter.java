@@ -92,17 +92,14 @@ public class BotStarter implements Bot
                 myRegions.add(region);
             }
         }
-        System.err.println("Updated regions");
 
         myRegions.sort((o1, o2) -> o2.threat - o1.threat);
 
-        System.err.println("Sorted regions");
 
         String myName = state.getMyPlayerName();
         int armiesLeft = state.getStartingArmies();
 
 
-        System.err.println("Placed deploy order");
         HashSet<Region> visited = new HashSet<>();
         borders.clear();
 
@@ -139,7 +136,6 @@ public class BotStarter implements Bot
 //            System.err.println(region.getId() + " " + region.distanceToBorder);
 //        }
 
-        System.err.println("Calculated borders");
         // Sortam dupa dimensiune
         borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 

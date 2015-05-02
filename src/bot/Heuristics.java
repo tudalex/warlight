@@ -29,7 +29,7 @@ public class Heuristics {
 	static ArrayList<Move> metaHeuristic(String myName, int armiesLeft, List<Region> regions, int round, GeneralMove move) {
 		HashSet<Region> importantRegions = new HashSet<>();
 		move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
-
+        regions.forEach(region1 -> region1.update());
         //System.err.println("First heuristic");
 		final ArrayList<Move> moves = greedyHeuristic(
 				myName,
@@ -63,9 +63,6 @@ public class Heuristics {
         // Precalculating SuperRegion information
         regions.stream().forEach(region -> {
             superRegions.add(region.getSuperRegion());
-            region.update();
-//            if (region.getPlayerName().equals(myName))
-//                System.err.println("" + region.getId() + " " + region.threat);
         });
         superRegions.stream().forEach(superRegion ->
 				superRegionEnemies.put(superRegion, enemyArmiesInSuperRegion(superRegion, myName)));
