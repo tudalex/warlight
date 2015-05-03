@@ -48,6 +48,7 @@ public class GeneralMinimax {
             for (int j = 0; j < opMoves.length; j++) {
                 GameState next = nextState(state, myMoves[i], opMoves[j]);
                 BestMove score = minimax(next, depth - 1);
+                score.opDeployments = next.opMoves;
                 scores[i][j] = score;
             }
         }
@@ -197,18 +198,21 @@ public class GeneralMinimax {
         GameState next = state.clone();
         GameState myState = state.clone();
         GameState opState = state.clone();
-        List<Move> myMoves = Heuristics.metaHeuristic(
-                myState.getMyPlayerName(),
-                myMove.getNumber(),
-                myState.getVisibleMap().getRegions(),
-                myState.getRound(),
-                myMove);
         List<Move> opMoves = Heuristics.metaHeuristic(
                 opState.getOpponentPlayerName(),
                 opMove.getNumber(),
                 opState.getVisibleMap().getRegions(),
                 opState.getRound(),
                 myMove);
+        makeDeployMoves(myState.getVisibleMap(), opMoves);
+        List<Move> myMoves = Heuristics.metaHeuristic(
+                myState.getMyPlayerName(),
+                myMove.getNumber(),
+                myState.getVisibleMap().getRegions(),
+                myState.getRound(),
+                myMove);
+
+
         makeDeployMoves(next.getVisibleMap(), myMoves);
         makeDeployMoves(next.getVisibleMap(), opMoves);
         Iterator<AttackTransferMove> myIt = myMoves.stream().filter(m -> m instanceof AttackTransferMove)
@@ -226,11 +230,12 @@ public class GeneralMinimax {
         while (opIt.hasNext()) {
             executeAttackMove(next.getVisibleMap(), opIt.next());
         }
+        next.opMoves = opMoves;
 
         return next;
     }
 
-    private void makeDeployMoves(Map map, List<Move> moves) {
+    static public void makeDeployMoves(Map map, List<Move> moves) {
         moves.stream().filter(m -> m instanceof PlaceArmiesMove).forEach(m -> {
             PlaceArmiesMove move = (PlaceArmiesMove) m;
             Region r = map.getRegion(move.getRegion().getId());
@@ -280,6 +285,7 @@ public class GeneralMinimax {
         public double score;
         public GeneralMove move;
         public GeneralMove opMove;
+        public List<Move> opDeployments;
 
         public BestMove(double score, GeneralMove move, GeneralMove opMove) {
             this.score = score;

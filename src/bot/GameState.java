@@ -6,6 +6,9 @@
 package bot;
 
 import map.Map;
+import move.Move;
+
+import java.util.List;
 
 /**
  *
@@ -19,6 +22,7 @@ public class GameState {
     private int round;
     private String myName = "";
     private String opponentName = "";
+    public List<Move> opMoves;
 
     public GameState() {
     }

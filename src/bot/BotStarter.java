@@ -155,6 +155,8 @@ public class BotStarter implements Bot
             greedyOrders = Heuristics.greedyHeuristic(state.getMyPlayerName(), armiesLeft, visibleRegions, state.getRoundNumber());
         } else {
             bestMove.move.setSuperRegion(state.getVisibleMap().getSuperRegion(bestMove.move.getSuperRegion().getId()));
+            if (bestMove.opDeployments != null && bestMove.opDeployments.size() > 0)
+                GeneralMinimax.makeDeployMoves(state.getVisibleMap(), bestMove.opDeployments);
             Heuristics.DEBUG = false;
             greedyOrders = Heuristics.metaHeuristic(
                     state.getMyPlayerName(),

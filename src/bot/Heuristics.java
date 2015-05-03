@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * Created by tudalex on 29/04/15.
  */
 public class Heuristics {
-    static int DEFENSIVE_MODE = 40;
+    static int DEFENSIVE_MODE = 200;
     static boolean DEBUG = false;
     static Logger log = Logger.getLogger( Heuristics.class.getName() );
     static public int enemyArmiesInSuperRegion(SuperRegion superRegion, String playerName) {
