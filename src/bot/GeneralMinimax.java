@@ -80,7 +80,8 @@ public class GeneralMinimax {
         double[] myProb = computeProbabilities(myScores, 1);
         int move = choseBestMove(myProb, 1);
         BestMove best = new BestMove(myScores[move], myMoves[move], null);
-        best.opMove = opMoves[choseBestMove(opProb, -1)];
+        if (opProb.length != 0)
+            best.opMove = opMoves[choseBestMove(opProb, -1)];
         return best;
 
 //        double sum = 0;
@@ -292,7 +293,6 @@ public class GeneralMinimax {
         }
     }
     
-//    public static void main(String[] args) {
 //        double[][] mat = {{2, -1, 3}, {-3, 2, 1}, {-1, 0, 2}};
 //        BestMove[][] scores = new BestMove[3][3];
 //        for (int i = 0; i < 3; i++)

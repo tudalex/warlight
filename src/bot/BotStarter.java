@@ -28,6 +28,7 @@ import map.Border;
 import map.Region;
 import map.SuperRegion;
 import move.AttackTransferMove;
+import move.GeneralMove;
 import move.Move;
 import move.PlaceArmiesMove;
 
@@ -38,6 +39,7 @@ public class BotStarter implements Bot
 
     final static boolean GREEDY = false;
 	//BorderMinimax minimax;
+    final static boolean DEBUG = false;
 
 
 	ArrayList<Move> orders;
@@ -83,7 +85,7 @@ public class BotStarter implements Bot
 	public Stream<Move> getPlaceArmiesMoves(BotState state, Long timeOut) {
         final LinkedList<Region> visibleRegions = state.getVisibleMap().getRegions();
 
-        System.err.println("Round " + state.getRoundNumber() + " got " +  state.getStartingArmies() + " armies ");
+        System.err.println("Round " + state.getRoundNumber() + " got " + state.getStartingArmies() + " armies ");
 
         myRegions.clear();
         for (Region region : visibleRegions) {
@@ -92,6 +94,7 @@ public class BotStarter implements Bot
                 myRegions.add(region);
             }
         }
+
 
         myRegions.sort((o1, o2) -> o2.threat - o1.threat);
 
@@ -139,28 +142,35 @@ public class BotStarter implements Bot
         // Sortam dupa dimensiune
         borders.sort((b1, b2) -> b1.getSize() - b2.getSize());
 
+        if (DEBUG)
+            System.err.println(visibleRegions);
         GeneralMinimax mm = new GeneralMinimax(state);
         GeneralMinimax.BestMove bestMove = mm.minimax(new GameState(state), 1);
         System.err.println("Minimax iterations: "+ mm.iterations);
         System.err.println("Best move: " + bestMove);
         final ArrayList<Move> greedyOrders;
+        if (DEBUG)
+            System.err.println(visibleRegions);
         if (bestMove.move == null || GREEDY) {
             greedyOrders = Heuristics.greedyHeuristic(state.getMyPlayerName(), armiesLeft, visibleRegions, state.getRoundNumber());
         } else {
-            Heuristics.DEBUG = true;
+            bestMove.move.setSuperRegion(state.getVisibleMap().getSuperRegion(bestMove.move.getSuperRegion().getId()));
+            Heuristics.DEBUG = false;
             greedyOrders = Heuristics.metaHeuristic(
                     state.getMyPlayerName(),
                     armiesLeft, visibleRegions, state.getRoundNumber(),
                     bestMove.move);
             Heuristics.DEBUG = false;
         }
-
+        if (DEBUG)
+            System.err.println(visibleRegions);
 //        if (armiesLeft > 0 && borders.size() > 0) {
 //            greedyOrders.add(
 //                    new PlaceArmiesMove(myName, borders.get(0).getRegions().get(0), armiesLeft));
 //        }
         orders = greedyOrders;
-        System.err.println("Final orders: " + orders);
+        if (DEBUG)
+            System.err.println("Final orders: " + orders);
         return orders.stream().filter(move -> move instanceof PlaceArmiesMove);
     }
 

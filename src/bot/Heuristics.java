@@ -31,6 +31,8 @@ public class Heuristics {
 		move.getSuperRegion().getSubRegions().forEach(region -> importantRegions.addAll(region.getNeighbors()));
         regions.forEach(region1 -> region1.update());
         //System.err.println("First heuristic");
+		if (DEBUG)
+			System.err.println("Before first heuristic: " + regions);
 		final ArrayList<Move> moves = greedyHeuristic(
 				myName,
 				move.getNumber(),
@@ -38,6 +40,8 @@ public class Heuristics {
 				round,
                 move.getSuperRegion().getId());
         //System.err.println("Second heuristic");
+		if (DEBUG)
+			System.err.println("After first heuristic: " + regions);
 		moves.addAll(greedyHeuristic(
                 myName,
                 armiesLeft - move.getNumber(),
@@ -54,6 +58,8 @@ public class Heuristics {
 
     static ArrayList<Move> greedyHeuristic(String myName, int armiesLeft, List<Region> regions, int round, int superRegionLimit) {
 
+		if (DEBUG)
+			System.err.println("Recieved regions: " + regions);
         final ArrayList<Move> orders = new ArrayList<>();
         final HashMap<Region, Integer> importance = new HashMap<>();
         final HashMap<SuperRegion, Integer> superRegionEnemies = new HashMap<>();
@@ -67,18 +73,25 @@ public class Heuristics {
         superRegions.stream().forEach(superRegion ->
 				superRegionEnemies.put(superRegion, enemyArmiesInSuperRegion(superRegion, myName)));
 
+		if (DEBUG)
+			System.err.println("Regions: " + regions);
 		List<Region> targets = regions.stream()
 				.filter(region1 -> !region1.getPlayerName().equals(myName))
 				.map(region2 -> {
                     final SuperRegion superRegion = region2.getSuperRegion();
-					importance.put(
-                            region2,
-                            superRegion.getArmiesReward() / superRegionEnemies.get(superRegion));
+					if (superRegionEnemies.get(superRegion) == 0)
+						importance.put(region2, -100);
+					else
+						importance.put(
+								region2,
+								superRegion.getArmiesReward() / superRegionEnemies.get(superRegion));
 					return region2;
 				})
 				.sorted((Region o1, Region o2) -> importance.get(o2) - importance.get(o1))
 				.collect(Collectors.toList());
 
+		if (DEBUG)
+			System.err.println("Targets: " + targets);
 
 		for (Region toRegion : targets) {
             if (DEBUG)
