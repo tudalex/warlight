@@ -35,7 +35,7 @@ public class BotState {
 	private ArrayList<Move> opponentMoves; //list of all the opponent's moves, reset at the end of each round
 
 	private int startingArmies; //number of armies the player can place on map
-	private int maxRounds;
+	public int maxRounds;
 	private int roundNumber;
 
 	private long totalTimebank; //total time that can be in the timebank

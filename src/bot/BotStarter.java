@@ -53,7 +53,7 @@ public class BotStarter implements Bot
 	public Region getStartingRegion(BotState state, Long timeOut)
 	{
 		//minimax = new BorderMinimax(state);
-
+        Heuristics.DEFENSIVE_MODE = (int) Math.floor(state.maxRounds * 0.8);
 		Region bestRegion = null;
 		double bestRatio = -1;
 		for (Region pickableRegion : state.getPickableStartingRegions()) {
@@ -155,8 +155,9 @@ public class BotStarter implements Bot
             greedyOrders = Heuristics.greedyHeuristic(state.getMyPlayerName(), armiesLeft, visibleRegions, state.getRoundNumber());
         } else {
             bestMove.move.setSuperRegion(state.getVisibleMap().getSuperRegion(bestMove.move.getSuperRegion().getId()));
+            System.err.println("Opponent predicted moves: " + bestMove.opDeployments);
             if (bestMove.opDeployments != null && bestMove.opDeployments.size() > 0) {
-                System.err.println("Opponent predicted moves: " + bestMove.opDeployments);
+
                 GeneralMinimax.makeDeployMoves(state.getVisibleMap(), bestMove.opDeployments);
             }
             Heuristics.DEBUG = false;
