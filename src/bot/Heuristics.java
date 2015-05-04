@@ -45,9 +45,9 @@ public class Heuristics {
 		moves.addAll(greedyHeuristic(
                 myName,
                 armiesLeft - move.getNumber(),
-                regions.stream()
+                regions/*.stream()
                         .filter(region -> region.getSuperRegion().getId() != move.getSuperRegion().getId())
-                        .collect(Collectors.toList()),
+                        .collect(Collectors.toList())*/,
                 round));
 		return moves;
 	}
@@ -113,7 +113,7 @@ public class Heuristics {
             final int necessaryArmies;
 
 			if (!toRegion.getPlayerName().equals("neutral") && round > DEFENSIVE_MODE)
-				necessaryArmies = (int)Math.ceil((5 + toRegion.getArmies()) * 1.8);
+				necessaryArmies = (int)Math.ceil(Math.max(2 * toRegion.getArmies(), 10) * 1.8);
 			else
 				necessaryArmies = (int)Math.ceil(toRegion.getArmies() * 1.8);
             if (DEBUG)
