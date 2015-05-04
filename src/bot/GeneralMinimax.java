@@ -82,7 +82,7 @@ public class GeneralMinimax {
         int move = choseBestMove(myProb, 1);
         BestMove best = new BestMove(myScores[move], myMoves[move], null);
         if (opProb.length != 0)
-            best.opMove = opMoves[choseBestMove(opProb, -1)];
+            best.opDeployments = scores[move][choseBestMove(opProb, -1)].opDeployments;
         return best;
 
 //        double sum = 0;
