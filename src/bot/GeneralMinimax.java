@@ -178,8 +178,10 @@ public class GeneralMinimax {
                 return 0;
             }
             String op = opponent.get(r.getPlayerName());
-            return r.getArmies() - r.getNeighbors().stream().filter(n -> n.getPlayerName().equals(opponent.get(op)))
+            int s = r.getArmies() - r.getNeighbors().stream().filter(n -> n.getPlayerName().equals(opponent.get(op)))
                     .mapToInt(n -> n.getArmies()).sum();
+            if (r.getPlayerName().equals(state.getMyPlayerName())) return s;
+            return -s;
         }).sum();
         return score;
     }
