@@ -75,9 +75,9 @@ public class GeneralMinimax {
             }
             myScores[i] = sum;
         }
-//        System.err.println("scores:" + Arrays.deepToString(scores));
-//        System.err.println("opProb:" + Arrays.toString(opProb));
-//        System.err.println("myScores: " + Arrays.toString(myScores));
+        System.err.println("scores:" + Arrays.deepToString(scores));
+        System.err.println("opProb:" + Arrays.toString(opProb));
+        System.err.println("myScores: " + Arrays.toString(myScores));
         double[] myProb = computeProbabilities(myScores, 1);
         int move = choseBestMove(myProb, 1);
         BestMove best = new BestMove(myScores[move], myMoves[move], null);
@@ -297,7 +297,7 @@ public class GeneralMinimax {
 
         @Override
         public String toString() {
-            return "score: " + score + " move: " + move;
+            return "score: " + score + " move: " + move + " op moves: " + opDeployments;
         }
     }
     
