@@ -297,7 +297,7 @@ public class GeneralMinimax {
 
         @Override
         public String toString() {
-            return "score: " + score + " move: " + move + " op moves: " + opDeployments;
+            return "score: " + score + " move: " + move;
         }
     }
     
