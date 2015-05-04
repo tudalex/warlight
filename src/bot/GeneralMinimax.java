@@ -159,6 +159,19 @@ public class GeneralMinimax {
     }
 
     public double evaluate(GameState state) {
+        //check end of game
+        if (state.getVisibleMap().getRegions().stream()
+                .noneMatch(r -> !opponent.containsKey(r.getPlayerName()))) {
+            if (state.getVisibleMap().getRegions().stream()
+                    .noneMatch(r -> r.ownedByPlayer(state.getMyPlayerName()))) {
+                return -999999;
+            }
+            if (state.getVisibleMap().getRegions().stream()
+                    .noneMatch(r -> r.ownedByPlayer(state.getOpponentPlayerName()))) {
+                return 999999;
+            }
+        }
+        //superregions score
         double score = 100 * state.getVisibleMap().superRegions.stream()
                 .filter(superRegion -> superRegion.getSubRegions().size() != 0)
                 .mapToDouble(sr -> {
@@ -172,7 +185,7 @@ public class GeneralMinimax {
                     return Math.pow(2, myRegions * 1. / sr.getSubRegions().size()) * sr.getArmiesReward()
                     - Math.pow(2, opRegions * 1. / sr.getSubRegions().size()) * sr.getArmiesReward();
                 }).sum();
-
+        //opponent threat
         score += state.getVisibleMap().regions.stream().mapToInt(r -> {
             if (!opponent.containsKey(r.getPlayerName())) {
                 return 0;
@@ -183,6 +196,16 @@ public class GeneralMinimax {
             if (r.getPlayerName().equals(state.getMyPlayerName())) return s;
             return -s;
         }).sum();
+        //armies around neutral regions
+        score += state.getVisibleMap().regions.stream().filter(r -> !opponent.containsKey(r.getPlayerName()))
+                .mapToInt(r -> {
+                    int s = r.getArmies();
+                    s += r.getNeighbors().stream().filter(n -> n.ownedByPlayer(state.getMyPlayerName()))
+                            .mapToInt(n -> n.getArmies()).sum();
+                    s -= r.getNeighbors().stream().filter(n -> n.ownedByPlayer(state.getOpponentPlayerName()))
+                            .mapToInt(n -> n.getArmies()).sum();
+                    return s / 2;
+                }).sum();
         return score;
     }
 
