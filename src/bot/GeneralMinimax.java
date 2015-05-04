@@ -159,7 +159,7 @@ public class GeneralMinimax {
     }
 
     public double evaluate(GameState state) {
-        double score = state.getVisibleMap().superRegions.stream()
+        double score = 100 * state.getVisibleMap().superRegions.stream()
                 .filter(superRegion -> superRegion.getSubRegions().size() != 0)
                 .mapToDouble(sr -> {
                     long myRegions = sr.getSubRegions().stream()
