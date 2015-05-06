@@ -40,12 +40,25 @@ public class BotState {
 
 	private long totalTimebank; //total time that can be in the timebank
 	private long timePerMove; //the amount of time that is added to the timebank per requested move
+
+	public int opTroops;
 	
 	public BotState()
 	{
 		opponentMoves = new ArrayList<Move>();
 		roundNumber = 0;
 	}
+
+	public void updateOpTroops() {
+		opTroops = 0;
+		for (Move m : opponentMoves) {
+			if (m instanceof PlaceArmiesMove) {
+				opTroops += ((PlaceArmiesMove)m).getArmies();
+			}
+		}
+		opTroops = Math.max(opTroops, 5);
+        System.err.println("Opponent has " + opTroops + " armies");
+    }
 	
 	public void updateSettings(String key, String[] parts)
 	{
@@ -240,6 +253,7 @@ public class BotState {
 				System.err.println("Unable to parse Opponent moves " + e.getMessage());
 			}
 		}
+		updateOpTroops();
 	}
 	
 	public String getMyPlayerName(){
