@@ -77,11 +77,11 @@ public class AttackTransferMove extends Move {
     }
     
     public int mostProbableAttackingCasualties() {
-        return (int)(toRegion.getArmies() * 0.7) + 1;
+        return (int)Math.round(toRegion.getArmies() * 0.7);
     }
     
-    public int mostProbableDefendingCasualties() {
-        return (int)(armies * 0.6) + 1;
+    public int mostProbableDefendingCasualties(int armies) {
+        return (int)Math.round(armies * 0.6);
     }
 
     @Override

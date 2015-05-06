@@ -282,23 +282,24 @@ public class GeneralMinimax {
     private void executeAttackMove(Map map, AttackTransferMove move) {
         Region from = map.getRegion(move.getFromRegion().getId());
         Region to = map.getRegion(move.getToRegion().getId());
+        int armies = move.getArmies();
         if (from.getMoveableArmies() < move.getArmies()) {
-            return;
+            armies = from.getMoveableArmies();
         }
         if (from.getPlayerName().equals(to.getPlayerName())) {
-            from.setArmies(from.getArmies() - move.getArmies());
-            from.setMoveableArmies(from.getMoveableArmies() - move.getArmies());
-            to.setArmies(to.getArmies() + move.getArmies());
+            from.setArmies(from.getArmies() - armies);
+            from.setMoveableArmies(from.getMoveableArmies() - armies);
+            to.setArmies(to.getArmies() + armies);
         } else {
-            int attacking = Math.max(0, move.getArmies() - move.mostProbableAttackingCasualties());
-            int defending = Math.max(0, to.getArmies() - move.mostProbableDefendingCasualties());
+            int attacking = Math.max(0, armies - move.mostProbableAttackingCasualties());
+            int defending = Math.max(0, armies - move.mostProbableDefendingCasualties(armies));
             if (defending == 0 && attacking > 0) {
-                from.setArmies(from.getArmies() - move.getArmies());
-                from.setMoveableArmies(from.getMoveableArmies() - move.getArmies());
+                from.setArmies(from.getArmies() - armies);
+                from.setMoveableArmies(from.getMoveableArmies() - armies);
                 to.changeSide(from.getPlayerName(), attacking);
             } else {
-                from.setArmies(from.getArmies() - move.getArmies() + attacking);
-                from.setMoveableArmies(from.getMoveableArmies() - move.getArmies());
+                from.setArmies(from.getArmies() - armies + attacking);
+                from.setMoveableArmies(from.getMoveableArmies() - armies);
                 to.setArmies(defending);
                 to.setMoveableArmies(Math.min(to.getMoveableArmies(), to.getArmies() - 1));
             }
