@@ -172,7 +172,7 @@ public class GeneralMinimax {
             }
         }
         //superregions score
-        double score = 100 * state.getVisibleMap().superRegions.stream()
+        double score = 50 * state.getVisibleMap().superRegions.stream()
                 .filter(superRegion -> superRegion.getSubRegions().size() != 0)
                 .mapToDouble(sr -> {
                     long myRegions = sr.getSubRegions().stream()
@@ -197,7 +197,7 @@ public class GeneralMinimax {
             return -s;
         }).sum();
         //armies around neutral regions
-        score += state.getVisibleMap().regions.stream().filter(r -> !opponent.containsKey(r.getPlayerName()))
+        /*score += state.getVisibleMap().regions.stream().filter(r -> !opponent.containsKey(r.getPlayerName()))
                 .mapToInt(r -> {
                     int s = r.getArmies();
                     s += r.getNeighbors().stream().filter(n -> n.ownedByPlayer(state.getMyPlayerName()))
@@ -205,7 +205,7 @@ public class GeneralMinimax {
                     s -= r.getNeighbors().stream().filter(n -> n.ownedByPlayer(state.getOpponentPlayerName()))
                             .mapToInt(n -> n.getArmies()).sum();
                     return s / 2;
-                }).sum();
+                }).sum();*/
         return score;
     }
 
