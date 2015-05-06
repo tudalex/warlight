@@ -83,7 +83,7 @@ public class Border {
             to.setArmies(to.getArmies() + move.getArmies());
         } else {
             int attacking = Math.max(0, move.getArmies() - move.mostProbableAttackingCasualties());
-            int defending = Math.max(0, to.getArmies() - move.mostProbableDefendingCasualties());
+            int defending = Math.max(0, to.getArmies() - move.mostProbableDefendingCasualties(move.getArmies()));
             if (defending == 0 && attacking > 0) {
                 from.setArmies(from.getArmies() - move.getArmies());
                 from.setMoveableArmies(from.getMoveableArmies() - move.getArmies());
