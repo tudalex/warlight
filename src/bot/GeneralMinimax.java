@@ -225,14 +225,14 @@ public class GeneralMinimax {
         GameState opState = state.clone();
         List<Move> opMoves = Heuristics.metaHeuristic(
                 opState.getOpponentPlayerName(),
-                opMove.getNumber(),
+                opState.getOpArmiesPerTurn(),
                 opState.getVisibleMap().getRegions(),
                 opState.getRound(),
-                myMove);
+                opMove);
         makeDeployMoves(myState.getVisibleMap(), opMoves);
         List<Move> myMoves = Heuristics.metaHeuristic(
                 myState.getMyPlayerName(),
-                myMove.getNumber(),
+                myState.getArmiesPerTurn(),
                 myState.getVisibleMap().getRegions(),
                 myState.getRound(),
                 myMove);
